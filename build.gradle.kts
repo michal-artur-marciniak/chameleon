@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -16,10 +17,8 @@ allprojects {
 
 subprojects {
     plugins.withId("org.jetbrains.kotlin.jvm") {
-        java {
-            toolchain {
-                languageVersion.set(JavaLanguageVersion.of(21))
-            }
+        extensions.configure<KotlinJvmProjectExtension> {
+            jvmToolchain(21)
         }
 
         tasks.withType<KotlinCompile>().configureEach {
