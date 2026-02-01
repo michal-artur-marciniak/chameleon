@@ -1,0 +1,19 @@
+services:
+  agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: agent-platform:latest
+    container_name: agent-platform
+    ports:
+      - "18789:18789"
+    volumes:
+      - ../workspace:/app/workspace
+      - ../config:/app/config
+      - ../plugins:/app/plugins
+      - ../data:/app/data
+    env_file:
+      - ../app/.env
+    environment:
+      - LOG_LEVEL=INFO
+    restart: unless-stopped

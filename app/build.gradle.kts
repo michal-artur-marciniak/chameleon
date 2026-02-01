@@ -27,3 +27,21 @@ dependencies {
 application {
     mainClass.set("agent.platform.ApplicationKt")
 }
+
+tasks.register<Jar>("fatJar") {
+    group = "build"
+    archiveBaseName.set("agent-platform")
+    archiveClassifier.set("")
+    archiveVersion.set("")
+    manifest {
+        attributes["Main-Class"] = "agent.platform.ApplicationKt"
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(sourceSets.main.get().output)
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get()
+            .filter { it.name.endsWith(".jar") }
+            .map { zipTree(it) }
+    })
+}
