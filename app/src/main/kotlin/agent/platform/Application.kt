@@ -2,8 +2,8 @@ package agent.platform
 
 import agent.platform.config.ConfigLoader
 import agent.platform.config.StartupLogger
-import agent.platform.plugins.ChannelConfig
-import agent.platform.plugins.PluginLoader
+import agent.platform.plugins.InitializationResult
+import agent.platform.plugins.PluginManager
 import agent.platform.plugins.PluginOrchestrator
 import agent.platform.server.ServerFactory
 import java.nio.file.Paths
@@ -23,26 +23,21 @@ fun main() {
         port = loadedConfig.config.gateway.port
     )
 
-    // Load and start plugins
-    val pluginsDir = loadedConfig.configPath?.parent?.resolve("plugins") 
-        ?: Paths.get("plugins")
-    val pluginLoader = PluginLoader(pluginsDir)
-    
-    val channelConfigs = mapOf(
-        "telegram" to ChannelConfig(
-            enabled = loadedConfig.config.channels.telegram.enabled,
-            token = loadedConfig.config.channels.telegram.token
-        )
+    // Initialize plugins
+    val orchestrator = PluginOrchestrator(loadedConfig.config)
+    val pluginsDir = loadedConfig.configPath?.parent?.resolve("plugins") ?: Paths.get("plugins")
+    val pluginManager = PluginManager(
+        config = loadedConfig.config,
+        orchestrator = orchestrator,
+        pluginsDir = pluginsDir
     )
     
-    val loadedPlugins = pluginLoader.loadEnabledPlugins(channelConfigs)
-    
-    if (loadedPlugins.isEmpty()) {
-        println("[app] no plugins loaded")
-    } else {
-        val orchestrator = PluginOrchestrator(loadedConfig.config)
-        loadedPlugins.forEach { loaded ->
-            orchestrator.startPlugin(loaded.plugin)
+    when (val result = pluginManager.initialize()) {
+        is InitializationResult.NoPluginsLoaded -> {
+            println("[app] no plugins loaded")
+        }
+        is InitializationResult.Success -> {
+            println("[app] started ${result.count} plugin(s)")
         }
     }
 
