@@ -9,6 +9,7 @@
 # Kotlin/Java
 **/out/
 *.class
+.kotlin/
 
 # IDEs
 .idea/
