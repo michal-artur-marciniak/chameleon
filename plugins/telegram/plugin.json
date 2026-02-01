@@ -1,0 +1,6 @@
+{
+  "id": "telegram",
+  "version": "0.1.0",
+  "entryPoint": "agent.plugin.telegram.TelegramPlugin",
+  "type": "channel"
+}

@@ -1,0 +1,42 @@
+# Docs
+.docs/
+
+# Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin/Java
+**/out/
+*.class
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local env/config
+.env
+.env.*
+!.env.example
+config/*.local.json
+config/*.local
+config/*.secret
+config/*.private
+
+# Runtime data
+/workspace/
+/data/
+/plugins/*.jar
