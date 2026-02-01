@@ -38,6 +38,6 @@ config/*.secret
 config/*.private
 
 # Runtime data
-/workspace/
+workspace/
 /data/
 /plugins/*.jar

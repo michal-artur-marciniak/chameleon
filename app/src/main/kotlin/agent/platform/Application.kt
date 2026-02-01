@@ -2,6 +2,7 @@ package agent.platform
 
 import agent.platform.config.PlatformConfig
 import agent.platform.config.TelegramConfig
+import agent.platform.persistence.SessionIndexStore
 import agent.plugin.telegram.TelegramPlugin
 import agent.sdk.OutboundMessage
 import io.ktor.server.application.call
@@ -34,7 +35,7 @@ fun main() {
 
     val telegramConfig = config.channels.telegram
     if (telegramConfig.enabled && !telegramConfig.token.isNullOrBlank()) {
-        startTelegramEcho(telegramConfig)
+        startTelegramEcho(config, telegramConfig)
     } else if (telegramConfig.enabled) {
         println("[app] telegram enabled but token missing")
     }
@@ -42,14 +43,18 @@ fun main() {
     server.start(wait = true)
 }
 
-private fun startTelegramEcho(config: TelegramConfig) {
-    val plugin = TelegramPlugin(token = config.token!!, requireMentionInGroups = true)
+private fun startTelegramEcho(config: PlatformConfig, telegram: TelegramConfig) {
+    val plugin = TelegramPlugin(token = telegram.token!!, requireMentionInGroups = true)
+    val workspace = Paths.get(config.agent.workspace)
+    val indexStore = SessionIndexStore(workspace)
     val handler = CoroutineExceptionHandler { _, throwable ->
         println("[telegram] coroutine error: ${throwable.message}")
     }
     CoroutineScope(Dispatchers.IO + handler).launch {
         println("[telegram] starting polling")
         plugin.start { inbound ->
+            val sessionKey = buildSessionKey(config.agent.id, inbound.channelId, inbound.chatId, inbound.isGroup)
+            indexStore.touchSession(sessionKey)
             println(
                 "[telegram] message chat=${inbound.chatId} user=${inbound.userId} " +
                     "group=${inbound.isGroup} mentioned=${inbound.isMentioned}"
@@ -64,6 +69,14 @@ private fun startTelegramEcho(config: TelegramConfig) {
                 println("[telegram] send failed: ${error.message}")
             }
         }
+    }
+}
+
+private fun buildSessionKey(agentId: String, channelId: String, chatId: String, isGroup: Boolean): String {
+    return if (isGroup) {
+        "agent:$agentId:$channelId:group:$chatId"
+    } else {
+        "agent:$agentId:main"
     }
 }
 

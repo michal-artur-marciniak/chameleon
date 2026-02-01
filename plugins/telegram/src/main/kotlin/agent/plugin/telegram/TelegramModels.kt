@@ -30,7 +30,8 @@ data class TelegramChat(
     val id: Long,
     val type: String,
     val title: String? = null,
-    val username: String? = null
+    val username: String? = null,
+    @SerialName("first_name") val firstName: String? = null
 )
 
 @Serializable
