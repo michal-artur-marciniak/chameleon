@@ -1,11 +1,13 @@
 package agent.platform
 
 import agent.platform.config.PlatformConfig
-import agent.platform.config.TelegramConfig
 import agent.platform.persistence.SessionIndexStore
-import agent.plugin.telegram.TelegramPlugin
+import agent.platform.plugins.ChannelConfig
+import agent.platform.plugins.PluginLoader
+import agent.sdk.ChannelPort
 import agent.sdk.OutboundMessage
 import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.response.respondText
@@ -45,30 +47,41 @@ fun main() {
         }
     }
 
-    val telegramConfig = config.channels.telegram
-    if (telegramConfig.enabled && !telegramConfig.token.isNullOrBlank()) {
-        startTelegramEcho(config, telegramConfig)
-    } else if (telegramConfig.enabled) {
-        println("[app] telegram enabled but token missing")
+    // Load and start enabled plugins
+    val pluginsDir = configPath?.parent?.resolve("plugins") ?: Paths.get("plugins")
+    val pluginLoader = PluginLoader(pluginsDir)
+    val channelConfigs = mapOf(
+        "telegram" to ChannelConfig(
+            enabled = config.channels.telegram.enabled,
+            token = config.channels.telegram.token
+        )
+    )
+    val loadedPlugins = pluginLoader.loadEnabledPlugins(channelConfigs)
+
+    if (loadedPlugins.isEmpty()) {
+        println("[app] no plugins loaded")
+    } else {
+        loadedPlugins.forEach { loaded ->
+            startPluginEcho(config, loaded.plugin)
+        }
     }
 
     server.start(wait = true)
 }
 
-private fun startTelegramEcho(config: PlatformConfig, telegram: TelegramConfig) {
-    val plugin = TelegramPlugin(token = telegram.token!!, requireMentionInGroups = true)
+private fun startPluginEcho(config: PlatformConfig, plugin: ChannelPort) {
     val workspace = Paths.get(config.agent.workspace)
     val indexStore = SessionIndexStore(workspace)
     val handler = CoroutineExceptionHandler { _, throwable ->
-        println("[telegram] coroutine error: ${throwable.message}")
+        println("[${plugin.id}] coroutine error: ${throwable.message}")
     }
     CoroutineScope(Dispatchers.IO + handler).launch {
-        println("[telegram] starting polling")
+        println("[${plugin.id}] starting")
         plugin.start { inbound ->
             val sessionKey = buildSessionKey(config.agent.id, inbound.channelId, inbound.chatId, inbound.isGroup)
             indexStore.touchSession(sessionKey)
             println(
-                "[telegram] message chat=${inbound.chatId} user=${inbound.userId} " +
+                "[${plugin.id}] message chat=${inbound.chatId} user=${inbound.userId} " +
                     "group=${inbound.isGroup} mentioned=${inbound.isMentioned}"
             )
             plugin.send(
@@ -78,7 +91,7 @@ private fun startTelegramEcho(config: PlatformConfig, telegram: TelegramConfig) 
                     text = inbound.text
                 )
             ).onFailure { error ->
-                println("[telegram] send failed: ${error.message}")
+                println("[${plugin.id}] send failed: ${error.message}")
             }
         }
     }
@@ -100,7 +113,7 @@ private fun loadConfig(path: Path?, env: Map<String, String>): PlatformConfig {
 }
 
 private fun expandEnv(raw: String, env: Map<String, String>): String {
-    val regex = Regex("\\$\\{([A-Z0-9_]+)}")
+    val regex = Regex("""\$\{([A-Z0-9_]+)}""")
     return regex.replace(raw) { match ->
         val key = match.groupValues[1]
         env[key] ?: System.getenv(key) ?: match.value
