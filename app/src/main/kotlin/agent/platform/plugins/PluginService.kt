@@ -17,24 +17,22 @@ import java.nio.file.Paths
 
 class PluginService(
     private val config: PlatformConfig,
-    private val pluginsDir: Path = Paths.get("plugins"),
+    private val configPath: Path?,
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) {
+    private val pluginsDir: Path = configPath?.parent?.resolve("plugins") ?: Paths.get("plugins")
     private val workspace = Paths.get(config.agent.workspace)
     private val indexStore = SessionIndexStore(workspace)
 
-    fun initialize(): InitializationResult {
+    fun startAll() {
         val plugins = loadPlugins()
         
         if (plugins.isEmpty()) {
-            return InitializationResult.NoPluginsLoaded
+            println("[app] no plugins loaded")
+            return
         }
         
-        plugins.forEach { plugin ->
-            startPlugin(plugin)
-        }
-        
-        return InitializationResult.Success(plugins.size)
+        plugins.forEach { startPlugin(it) }
     }
     
     private fun loadPlugins(): List<ChannelPort> {
@@ -107,9 +105,4 @@ class PluginService(
             "agent:${config.agent.id}:main"
         }
     }
-}
-
-sealed class InitializationResult {
-    data object NoPluginsLoaded : InitializationResult()
-    data class Success(val count: Int) : InitializationResult()
 }
