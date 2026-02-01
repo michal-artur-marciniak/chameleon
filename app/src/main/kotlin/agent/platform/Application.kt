@@ -11,6 +11,10 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,8 +32,16 @@ fun main() {
     logStartup(config, configPath, envPath)
 
     val server = embeddedServer(Netty, host = config.gateway.host, port = config.gateway.port) {
+        install(WebSockets)
         routing {
             get("/health") { call.respondText("ok") }
+            webSocket("/ws") {
+                for (frame in incoming) {
+                    if (frame is Frame.Text) {
+                        send(Frame.Text(frame.readText()))
+                    }
+                }
+            }
         }
     }
 
