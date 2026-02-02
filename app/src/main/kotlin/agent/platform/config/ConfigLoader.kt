@@ -17,8 +17,13 @@ class ConfigLoader(
     }
 
     private fun loadConfig(path: Path?, env: Map<String, String>): PlatformConfig {
-        if (path == null || !Files.exists(path)) return PlatformConfig()
-        val content = Files.readString(path)
+        val content = if (path != null && Files.exists(path)) {
+            Files.readString(path)
+        } else {
+            // Load default config from resources
+            javaClass.classLoader.getResource("config.default.json")?.readText()
+                ?: return PlatformConfig()
+        }
         return json.decodeFromString(PlatformConfig.serializer(), expandEnv(content, env))
     }
 

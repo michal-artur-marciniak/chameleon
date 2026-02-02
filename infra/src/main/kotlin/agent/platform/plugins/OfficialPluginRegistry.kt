@@ -1,14 +1,19 @@
-package agent.platform.plugins.domain
+package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
-import agent.platform.config.TelegramConfig
+import agent.platform.plugins.domain.PluginCapability
+import agent.platform.plugins.domain.PluginFactory
+import agent.platform.plugins.domain.PluginFactoryRegistry
+import agent.platform.plugins.domain.PluginId
+import agent.platform.plugins.domain.PluginType
+import agent.platform.plugins.domain.PluginVersion
 import agent.plugin.telegram.TelegramPlugin
 import agent.sdk.ChannelPort
 
 /**
  * Registry for official (built-in) plugins
  */
-class OfficialPluginRegistry {
+class OfficialPluginRegistry : PluginFactoryRegistry {
     
     private val factories = mutableMapOf<PluginId, PluginFactory>()
     
@@ -21,11 +26,11 @@ class OfficialPluginRegistry {
         factories[factory.id] = factory
     }
     
-    fun discover(config: PlatformConfig): List<PluginFactory> {
+    override fun discover(config: PlatformConfig): List<PluginFactory> {
         return factories.values.filter { it.isEnabled(config) }
     }
     
-    fun getFactory(id: PluginId): PluginFactory? = factories[id]
+    override fun getFactory(id: PluginId): PluginFactory? = factories[id]
     
     private fun telegramFactory(): PluginFactory = object : PluginFactory {
         override val id = PluginId("telegram")
@@ -54,17 +59,4 @@ class OfficialPluginRegistry {
             return TelegramPlugin(token = token, requireMentionInGroups = true)
         }
     }
-}
-
-/**
- * Factory interface for creating official plugin instances
- */
-interface PluginFactory {
-    val id: PluginId
-    val version: PluginVersion
-    val type: PluginType
-    val capabilities: Set<PluginCapability>
-    
-    fun isEnabled(config: PlatformConfig): Boolean
-    fun create(config: PlatformConfig): ChannelPort?
 }

@@ -1,10 +1,6 @@
 package agent.platform.plugins.domain
 
-import agent.sdk.ChannelPort
-import agent.sdk.InboundMessage
-import agent.sdk.OutboundMessage
 import agent.platform.config.PlatformConfig
-import java.nio.file.Path
 
 /**
  * PluginManager - Aggregate Root for the Plugin Context
@@ -13,16 +9,11 @@ import java.nio.file.Path
  */
 class PluginManager(
     private val config: PlatformConfig,
-    private val pluginsDir: Path
+    private val officialRegistry: PluginFactoryRegistry,
+    private val externalRepository: PluginRepository
 ) {
     private val plugins = mutableMapOf<PluginId, Plugin>()
     private val eventListeners = mutableListOf<PluginEventListener>()
-    
-    // Registry of official plugin factories
-    private val officialRegistry = OfficialPluginRegistry()
-    
-    // External plugin repository
-    private val externalRepository = FileSystemPluginRepository(pluginsDir)
     
     fun addEventListener(listener: PluginEventListener) {
         eventListeners.add(listener)
@@ -164,3 +155,12 @@ class PluginManager(
 interface PluginEventListener {
     fun onEvent(event: PluginEvent)
 }
+
+data class PluginInfo(
+    val id: String,
+    val version: String,
+    val type: String,
+    val source: String,
+    val status: String,
+    val enabled: Boolean
+)

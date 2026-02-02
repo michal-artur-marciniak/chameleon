@@ -1,14 +1,15 @@
-# Agent Platform
+# Chameleon
 
-Bootstrap scaffold for the OpenClaw-inspired agent platform.
+Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 
 ## Modules
 
-- `app` - application entrypoint, DI, config, server
+- `app` - application entrypoint, DI, config (loader + default), server
 - `core` - domain layer (pure Kotlin)
 - `infra` - infrastructure adapters
 - `sdk` - plugin SDK interfaces
 - `plugins/telegram` - built-in Telegram channel plugin
+- `extensions/` - external plugin drop-ins (created at runtime)
 
 ## Build
 
@@ -37,7 +38,7 @@ Located in `sdk/` module - defines interfaces and data structures all plugins mu
   - `OutboundMessage` - channelId, chatId, text
 
 #### 2. Domain Layer (Plugin Context)
-Located in `app/src/main/kotlin/agent/platform/plugins/domain/` - DDD aggregate root and value objects:
+Located in `core/src/main/kotlin/agent/platform/plugins/domain/` - DDD aggregate root and value objects:
 
 - **`PluginManager`** - Aggregate root for plugin lifecycle
   - `loadAll()` - Discovers and loads all plugins (official + external)
@@ -71,7 +72,7 @@ Located in `plugins/` directory - concrete channel implementations:
   - Features: long-polling, webhook cleanup, @mention detection
 
 **External Plugins** (loaded from filesystem):
-- Drop JAR + `plugin.json` into `plugins/<name>/`
+- Drop JAR + `plugin.json` into `extensions/<name>/`
 - Auto-discovered and loaded via `FileSystemPluginRepository`
 - Constructor injection: `(PluginManifest)`, `(PlatformConfig)`, `(JsonObject)`, or no-args
 - Official plugins take precedence (external skipped if ID conflicts)
@@ -127,7 +128,7 @@ Located in `app/` - uses domain layer:
 
 **Extensibility**
 - Official plugins: register in `OfficialPluginRegistry`
-- External plugins: drop JAR in `plugins/<name>/`
+- External plugins: drop JAR in `extensions/<name>/`
 - New channels (WhatsApp, Discord) implement `ChannelPort`
 - Hot-reload for external plugin development
 
@@ -187,8 +188,8 @@ For third-party or custom plugins:
    }
    ```
 4. Build fat JAR with dependencies
-5. Deploy to `plugins/my-custom/plugin.jar`
-6. Deploy manifest to `plugins/my-custom/plugin.json`
+5. Deploy to `extensions/my-custom/plugin.jar`
+6. Deploy manifest to `extensions/my-custom/plugin.json`
 
 The `PluginManager` will auto-discover and load on startup. Official plugins take precedence if ID conflicts.
 
@@ -201,7 +202,7 @@ The `PluginManager` will auto-discover and load on startup. Official plugins tak
 cp .env.example .env
 # Edit .env with your TELEGRAM_TOKEN
 
-# Run application
+# Run application (uses default config from resources)
 ./gradlew :app:run
 
 # Test health endpoint
@@ -217,9 +218,30 @@ websocat ws://localhost:18789/ws
 # Build fat JAR
 ./gradlew :app:fatJar
 
+# Create directories for runtime data
+mkdir -p workspace extensions data
+
+# Copy and customize config (optional - defaults work out of the box)
+mkdir -p config
+cp app/src/main/resources/config.default.json config/config.json
+# Edit config/config.json to customize
+
 # Start with Docker Compose
-docker compose -f docker/docker-compose.yml up -d
+docker compose up -d
 ```
+
+### Configuration
+
+Configuration is loaded in order of priority:
+1. `config/config.json` (if exists in working directory)
+2. `app/src/main/resources/config.default.json` (bundled fallback)
+
+Environment variables are expanded using `${VAR_NAME}` syntax in config files.
+
+Runtime directories are created automatically on startup:
+- `workspace/` - Session files and user data
+- `extensions/` - External plugin JARs
+- `data/` - SQLite indices and runtime data
 
 ## License
 

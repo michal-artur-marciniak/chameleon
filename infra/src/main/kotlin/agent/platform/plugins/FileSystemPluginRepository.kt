@@ -1,6 +1,8 @@
-package agent.platform.plugins.domain
+package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
+import agent.platform.plugins.domain.PluginId
+import agent.platform.plugins.domain.PluginRepository
 import agent.sdk.ChannelPort
 import agent.sdk.PluginManifest
 import kotlinx.serialization.json.Json
@@ -14,24 +16,24 @@ import java.nio.file.Path
  * Repository for loading external plugins from filesystem
  * 
  * Expects structure:
- *   plugins/
+ *   extensions/
  *     my-plugin/
  *       plugin.json   (manifest)
  *       plugin.jar    (implementation JAR)
  */
 class FileSystemPluginRepository(
-    private val pluginsDir: Path,
+    private val extensionsDir: Path,
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) : PluginRepository {
     
     override fun discover(): List<PluginManifest> {
-        if (!Files.exists(pluginsDir) || !Files.isDirectory(pluginsDir)) {
+        if (!Files.exists(extensionsDir) || !Files.isDirectory(extensionsDir)) {
             return emptyList()
         }
         
         val manifests = mutableListOf<PluginManifest>()
         
-        Files.list(pluginsDir).use { stream ->
+        Files.list(extensionsDir).use { stream ->
             stream.filter { Files.isDirectory(it) }
                 .forEach { pluginDir ->
                     val manifestPath = pluginDir.resolve("plugin.json")
@@ -47,7 +49,7 @@ class FileSystemPluginRepository(
     }
     
     override fun load(manifest: PluginManifest, config: Any?): ChannelPort? {
-        val pluginDir = pluginsDir.resolve(manifest.id)
+        val pluginDir = extensionsDir.resolve(manifest.id)
         val jarPath = pluginDir.resolve("plugin.jar")
         
         if (!Files.exists(jarPath)) {
@@ -59,7 +61,7 @@ class FileSystemPluginRepository(
     }
     
     override fun findManifest(id: PluginId): PluginManifest? {
-        val pluginDir = pluginsDir.resolve(id.value)
+        val pluginDir = extensionsDir.resolve(id.value)
         val manifestPath = pluginDir.resolve("plugin.json")
         
         return if (Files.exists(manifestPath)) {

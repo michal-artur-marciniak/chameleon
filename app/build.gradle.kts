@@ -30,7 +30,7 @@ application {
 
 tasks.register<Jar>("fatJar") {
     group = "build"
-    archiveBaseName.set("agent-platform")
+    archiveBaseName.set("chameleon")
     archiveClassifier.set("")
     archiveVersion.set("")
     manifest {

@@ -4,9 +4,9 @@ RUN apk add --no-cache sqlite sqlite-dev
 
 WORKDIR /app
 
-COPY app/build/libs/agent-platform.jar app.jar
+COPY app/build/libs/chameleon.jar app.jar
 
-VOLUME ["/app/workspace", "/app/config", "/app/plugins", "/app/data"]
+VOLUME ["/app/workspace", "/app/config", "/app/extensions", "/app/data"]
 
 EXPOSE 18789
 

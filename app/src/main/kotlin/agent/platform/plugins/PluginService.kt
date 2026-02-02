@@ -2,10 +2,23 @@ package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
 import agent.platform.persistence.SessionIndexStore
-import agent.platform.plugins.domain.*
+import agent.platform.plugins.domain.PluginEvent
+import agent.platform.plugins.domain.PluginEventListener
+import agent.platform.plugins.domain.PluginId
+import agent.platform.plugins.domain.PluginInfo
+import agent.platform.plugins.domain.PluginManager
+import agent.platform.plugins.domain.PluginDiscovered
+import agent.platform.plugins.domain.PluginLoaded
+import agent.platform.plugins.domain.PluginEnabled
+import agent.platform.plugins.domain.PluginDisabled
+import agent.platform.plugins.domain.PluginReloaded
+import agent.platform.plugins.domain.PluginError
+import agent.platform.plugins.domain.PluginSkipped
 import agent.sdk.ChannelPort
 import agent.sdk.InboundMessage
 import agent.sdk.OutboundMessage
+import agent.platform.plugins.FileSystemPluginRepository
+import agent.platform.plugins.OfficialPluginRegistry
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +36,7 @@ class PluginService(
     private val config: PlatformConfig,
     private val configPath: Path?
 ) {
-    private val pluginsDir: Path = configPath?.parent?.resolve("plugins") ?: Paths.get("plugins")
+    private val extensionsDir: Path = Paths.get(config.agent.extensionsDir)
     private val workspace = Paths.get(config.agent.workspace)
     private val indexStore = SessionIndexStore(workspace)
     
@@ -31,7 +44,9 @@ class PluginService(
     private val runningPlugins = mutableMapOf<PluginId, CoroutineScope>()
     
     init {
-        pluginManager = PluginManager(config, pluginsDir)
+        val officialRegistry = OfficialPluginRegistry()
+        val externalRepository = FileSystemPluginRepository(extensionsDir)
+        pluginManager = PluginManager(config, officialRegistry, externalRepository)
         pluginManager.addEventListener(LoggingEventListener())
     }
 
@@ -157,12 +172,3 @@ class PluginService(
         }
     }
 }
-
-data class PluginInfo(
-    val id: String,
-    val version: String,
-    val type: String,
-    val source: String,
-    val status: String,
-    val enabled: Boolean
-)

@@ -2,7 +2,6 @@ package agent.platform.plugins.domain
 
 import agent.sdk.ChannelPort
 import agent.sdk.PluginManifest
-import java.nio.file.Path
 
 /**
  * Repository interface for plugin discovery and loading

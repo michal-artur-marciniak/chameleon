@@ -18,7 +18,8 @@ data class GatewayConfig(
 @Serializable
 data class AgentConfig(
     val id: String = "main",
-    val workspace: String = "workspace"
+    val workspace: String = "workspace",
+    val extensionsDir: String = "extensions"
 )
 
 @Serializable

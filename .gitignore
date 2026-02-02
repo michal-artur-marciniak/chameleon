@@ -32,15 +32,11 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-config/*.local.json
-config/*.local
-config/*.secret
-config/*.private
 
-# Runtime data
-workspace/
+# Runtime data (created at startup)
+/workspace/
 /data/
-/plugins/*.jar
+/extensions/
 
 # Kotlin Language Server
 kls_database.db
