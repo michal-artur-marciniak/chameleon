@@ -1,4 +1,4 @@
-rootProject.name = "agent-platform"
+rootProject.name = "chameleon"
 
 pluginManagement {
     repositories {

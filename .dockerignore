@@ -1,0 +1,37 @@
+# VCS
+.git
+.gitignore
+
+# Docs
+.docs
+
+# IDE
+.idea
+.vscode
+
+# Gradle
+.gradle
+**/build
+!app/build/
+!app/build/libs/
+!app/build/libs/chameleon*.jar
+**/out
+
+# Kotlin
+.kotlin
+*.class
+
+# Local env/config
+.env
+.env.*
+config/*.local*
+config/*.secret
+config/*.private
+
+# Runtime data
+workspace
+data
+extensions/*.jar
+
+# Logs
+*.log

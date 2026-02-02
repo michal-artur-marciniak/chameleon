@@ -9,6 +9,7 @@
 # Kotlin/Java
 **/out/
 *.class
+.kotlin/
 
 # IDEs
 .idea/
@@ -31,12 +32,11 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-config/*.local.json
-config/*.local
-config/*.secret
-config/*.private
 
-# Runtime data
+# Runtime data (created at startup)
 /workspace/
 /data/
-/plugins/*.jar
+/extensions/
+
+# Kotlin Language Server
+kls_database.db

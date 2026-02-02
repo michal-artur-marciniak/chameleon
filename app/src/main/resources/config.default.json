@@ -1,11 +1,16 @@
 {
+  "agent": {
+    "id": "main",
+    "workspace": "/app/workspace",
+    "extensionsDir": "/app/extensions"
+  },
   "gateway": {
     "host": "0.0.0.0",
     "port": 18789
   },
   "channels": {
     "telegram": {
-      "enabled": true,
+      "enabled": false,
       "token": "${TELEGRAM_TOKEN}",
       "mode": "polling"
     }

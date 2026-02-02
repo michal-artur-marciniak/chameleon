@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PlatformConfig(
+    val agent: AgentConfig = AgentConfig(),
     val gateway: GatewayConfig = GatewayConfig(),
     val channels: ChannelsConfig = ChannelsConfig()
 )
@@ -12,6 +13,13 @@ data class PlatformConfig(
 data class GatewayConfig(
     val host: String = "0.0.0.0",
     val port: Int = 18789
+)
+
+@Serializable
+data class AgentConfig(
+    val id: String = "main",
+    val workspace: String = "workspace",
+    val extensionsDir: String = "extensions"
 )
 
 @Serializable

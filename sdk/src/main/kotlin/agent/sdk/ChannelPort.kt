@@ -12,7 +12,8 @@ data class InboundMessage(
     val chatId: String,
     val userId: String,
     val text: String,
-    val isGroup: Boolean
+    val isGroup: Boolean,
+    val isMentioned: Boolean
 )
 
 data class OutboundMessage(
