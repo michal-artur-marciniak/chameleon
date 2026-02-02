@@ -18,9 +18,9 @@ Bootstrap scaffold for the OpenClaw-inspired agent platform.
 
 ## Plugin System Architecture
 
-Our plugin system is a **channel-based plugin model** designed for extensibility and type safety. It separates messaging channel implementations from the core application logic.
+Our plugin system is a **domain-driven, channel-based plugin model** designed for extensibility and type safety. It follows DDD principles with clear separation between official (built-in) and external plugins.
 
-### Three-Layer Architecture
+### Four-Layer Architecture
 
 #### 1. SDK Layer (Contracts)
 Located in `sdk/` module - defines interfaces and data structures all plugins must implement:
@@ -36,108 +36,161 @@ Located in `sdk/` module - defines interfaces and data structures all plugins mu
   - `InboundMessage` - channelId, chatId, userId, text, isGroup, isMentioned
   - `OutboundMessage` - channelId, chatId, text
 
-#### 2. Plugin Implementation Layer
+#### 2. Domain Layer (Plugin Context)
+Located in `app/src/main/kotlin/agent/platform/plugins/domain/` - DDD aggregate root and value objects:
+
+- **`PluginManager`** - Aggregate root for plugin lifecycle
+  - `loadAll()` - Discovers and loads all plugins (official + external)
+  - `enable(id)`, `disable(id)` - Lifecycle management
+  - `reload(id)` - Hot-reload for external plugins
+  - Emits domain events: `PluginLoaded`, `PluginEnabled`, `PluginDisabled`, `PluginError`
+
+- **`Plugin`** - Entity representing a loaded plugin
+  - `id: PluginId`, `version: PluginVersion` - Value objects
+  - `type: PluginType` - CHANNEL | LLM | TOOL
+  - `source: PluginSource` - OFFICIAL | EXTERNAL
+  - `status: PluginStatus` - DISCOVERED | LOADED | ENABLED | DISABLED
+
+- **Value Objects**
+  - `PluginId` - Validated unique identifier (lowercase, alphanumeric, hyphens)
+  - `PluginVersion` - SemVer parsing (major.minor.patch)
+  - `PluginCapability` - RECEIVE_MESSAGES | SEND_MESSAGES | PROVIDE_LLM | EXECUTE_TOOL
+
+- **Repositories**
+  - `OfficialPluginRegistry` - Factory registry for built-in plugins
+  - `FileSystemPluginRepository` - JAR loading via URLClassLoader for external plugins
+
+#### 3. Plugin Implementation Layer
 Located in `plugins/` directory - concrete channel implementations:
 
-**Example: Telegram Plugin** (`plugins/telegram/`)
-- Implements `ChannelPort` interface
-- Uses Ktor HTTP client for Telegram Bot API communication
-- Features:
-  - Long-polling message retrieval
-  - Automatic webhook cleanup on startup
-  - @mention detection in group chats
-  - Configurable group mention requirements
-- Self-contained with dedicated `build.gradle.kts`
+**Official Plugins** (compiled with application):
+- **Telegram Plugin** (`plugins/telegram/`)
+  - Implements `ChannelPort` interface
+  - Registered in `OfficialPluginRegistry` via `PluginFactory`
+  - Uses Ktor HTTP client for Telegram Bot API
+  - Features: long-polling, webhook cleanup, @mention detection
 
-#### 3. Application Layer (Orchestration)
-Located in `app/` - loads and wires plugins:
+**External Plugins** (loaded from filesystem):
+- Drop JAR + `plugin.json` into `plugins/<name>/`
+- Auto-discovered and loaded via `FileSystemPluginRepository`
+- Constructor injection: `(PluginManifest)`, `(PlatformConfig)`, `(JsonObject)`, or no-args
+- Official plugins take precedence (external skipped if ID conflicts)
 
-- **`PluginLoader`** - Discovers plugins by scanning `plugins/` directory
-  - Reads `plugin.json` manifests
-  - Currently supports built-in plugins (compiled with app)
+#### 4. Application Layer (Orchestration)
+Located in `app/` - uses domain layer:
 
-- **Main Application** (`Application.kt`)
-  - Instantiates and configures plugins
-  - Starts plugins in coroutine scopes
-  - Connects plugins to session management and message handlers
+- **`PluginService`** - Application service
+  - Creates `PluginManager` aggregate root
+  - Subscribes to domain events for logging
+  - Starts enabled plugins in coroutine scopes
+  - Provides `listPlugins()`, `enablePlugin()`, `disablePlugin()`, `reloadPlugin()`
 
 ### Runtime Flow
 
 ```
 1. Application startup
         ↓
-2. PluginLoader scans plugins/ directory
+2. PluginManager.loadAll()
+   ├─ OfficialPluginRegistry.discover() → built-in factories
+   └─ FileSystemPluginRepository.discover() → external manifests
         ↓
-3. Parse plugin.json manifests
-   Instantiate plugin classes
+3. Load plugins
+   ├─ Official: factory.create(config) → Plugin entity
+   └─ External: URLClassLoader.loadClass() → Plugin entity
         ↓
-4. Configure plugins with credentials/settings
-   (e.g., Telegram token from config)
+4. Emit domain events
+   PluginLoaded, PluginEnabled, etc.
         ↓
-5. Call plugin.start() with message handler
-        ↓
-6. Handler processes InboundMessage:
-   - Update session index metadata
-   - Echo response via plugin.send()
+5. PluginService starts enabled plugins
+   plugin.start { inbound → handleMessage() }
 ```
 
 ### Key Design Principles
 
+**Domain-Driven Design**
+- `PluginManager` as aggregate root with clear boundaries
+- Value objects enforce invariants (PluginId validation, SemVer)
+- Domain events for loose coupling (logging, metrics)
+- Repository pattern for different plugin sources
+
 **Separation of Concerns**
 - Core application knows nothing about Telegram specifics
-- Plugins handle all channel-specific logic
-- Message format is standardized across all channels
+- Domain layer handles plugin lifecycle rules
+- Infrastructure (JAR loading) isolated in repositories
+- Message format standardized across all channels
 
 **Type Safety**
 - Kotlin interfaces ensure compile-time correctness
-- No reflection or dynamic loading in MVP
+- Value objects prevent invalid states
+- Sealed class hierarchy for domain events
 - Clear contracts between layers
 
-**Testability**
-- Mock ChannelPort implementations for testing
-- Isolated plugin units can be tested independently
-- No dependencies on external APIs in core logic
-
 **Extensibility**
-- New channels (WhatsApp, Discord, Slack) just implement `ChannelPort`
-- No changes required to core application
-- Consistent message handling across all channels
+- Official plugins: register in `OfficialPluginRegistry`
+- External plugins: drop JAR in `plugins/<name>/`
+- New channels (WhatsApp, Discord) implement `ChannelPort`
+- Hot-reload for external plugin development
 
-### Current Limitations (M1/M2 MVP)
+**Plugin Loading Strategy**
+1. Official plugins load first (ensures core functionality)
+2. External plugins load second
+3. External plugins skipped if ID conflicts with official
+4. All plugins registered in `PluginManager` aggregate
 
-- **Built-in only**: Plugins compiled with application, no external JAR loading
-- **Channels only**: Only `ChannelPort` interface; tool plugins not yet implemented
-- **Static loading**: No hot-reload or dynamic plugin discovery
+### Current Capabilities
+
+- ✅ **Official + External**: Built-in plugins + dynamic JAR loading
+- ✅ **Channels**: `ChannelPort` interface with Telegram implementation
+- ✅ **Hot-reload**: External plugins can be reloaded at runtime
+- ✅ **Type-safe**: DDD value objects (PluginId, PluginVersion)
+- ✅ **Domain events**: Plugin lifecycle events for observability
 
 ### Future Roadmap
 
 **M4+ Enhancements**:
-- External plugin loading from `plugins/*.jar`
-- Hot-reload capability for development
 - `ToolPort` interface for custom tool plugins
 - LLM provider plugins (OpenAI, Claude, etc.)
 - Webhook-based channel support
+- Plugin configuration schema validation
+- Plugin dependency resolution
 
 ### Adding a New Channel Plugin
 
-To add a new messaging channel (e.g., Discord):
+#### Option A: Official Plugin (Built-in)
+
+Add to the monorepo for core team maintenance:
 
 1. Create `plugins/discord/` module
 2. Implement `ChannelPort` interface
-3. Add `plugin.json` manifest:
+3. Register in `OfficialPluginRegistry`:
+   ```kotlin
+   register(discordFactory())
+   ```
+4. Add to `settings.gradle.kts` include list
+5. Configure in `config/config.json`
+
+The plugin will be compiled with the application and loaded automatically.
+
+#### Option B: External Plugin (JAR)
+
+For third-party or custom plugins:
+
+1. Create a new Kotlin project
+2. Implement `ChannelPort` interface
+3. Create `plugin.json`:
    ```json
    {
-     "id": "discord",
-     "version": "0.1.0",
-     "entryPoint": "agent.plugin.discord.DiscordPlugin",
+     "id": "my-custom",
+     "version": "1.0.0",
+     "entryPoint": "com.example.MyPlugin",
      "type": "channel"
    }
    ```
-4. Implement polling/webhook logic in `DiscordPlugin.kt`
-5. Add to `settings.gradle.kts` include list
-6. Configure in `config/config.json`
+4. Build fat JAR with dependencies
+5. Deploy to `plugins/my-custom/plugin.jar`
+6. Deploy manifest to `plugins/my-custom/plugin.json`
 
-The application will automatically load and start the plugin on next run.
+The `PluginManager` will auto-discover and load on startup. Official plugins take precedence if ID conflicts.
 
 ## Running
 

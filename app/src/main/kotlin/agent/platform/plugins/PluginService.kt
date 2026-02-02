@@ -1,217 +1,168 @@
 package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
-import agent.platform.config.TelegramConfig
 import agent.platform.persistence.SessionIndexStore
+import agent.platform.plugins.domain.*
 import agent.sdk.ChannelPort
+import agent.sdk.InboundMessage
 import agent.sdk.OutboundMessage
-import agent.sdk.PluginManifest
-import agent.plugin.telegram.TelegramPlugin
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
-import java.net.URLClassLoader
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
+/**
+ * Application service that orchestrates the Plugin domain
+ * 
+ * This is NOT the domain - it uses the PluginManager aggregate root
+ * to handle plugin lifecycle and coordinates with other contexts.
+ */
 class PluginService(
     private val config: PlatformConfig,
-    private val configPath: Path?,
-    private val json: Json = Json { ignoreUnknownKeys = true }
+    private val configPath: Path?
 ) {
     private val pluginsDir: Path = configPath?.parent?.resolve("plugins") ?: Paths.get("plugins")
     private val workspace = Paths.get(config.agent.workspace)
     private val indexStore = SessionIndexStore(workspace)
-
-    // Official plugins registry - id -> factory function
-    private val officialPlugins: Map<String, (PlatformConfig) -> ChannelPort?> = mapOf(
-        "telegram" to { cfg ->
-            val telegramConfig = cfg.channels.telegram
-            if (!telegramConfig.enabled) return@to null
-            val token = telegramConfig.token
-            if (token.isNullOrBlank()) {
-                println("[plugin-service] telegram: enabled but token missing")
-                return@to null
-            }
-            TelegramPlugin(token = token, requireMentionInGroups = true)
-        }
-    )
+    
+    private val pluginManager: PluginManager
+    private val runningPlugins = mutableMapOf<PluginId, CoroutineScope>()
+    
+    init {
+        pluginManager = PluginManager(config, pluginsDir)
+        pluginManager.addEventListener(LoggingEventListener())
+    }
 
     fun startAll() {
-        val plugins = loadAllPlugins()
+        // Load all plugins through the domain
+        val plugins = pluginManager.loadAll()
 
         if (plugins.isEmpty()) {
             println("[app] no plugins loaded")
             return
         }
 
-        plugins.forEach { startPlugin(it) }
-    }
-
-    private fun loadAllPlugins(): List<ChannelPort> {
-        val plugins = mutableListOf<ChannelPort>()
-
-        // Load official plugins first
-        officialPlugins.forEach { (id, factory) ->
-            runCatching {
-                factory(config)?.let {
-                    println("[plugin-service] loaded official plugin: $id")
-                    plugins.add(it)
-                }
-            }.onFailure { e ->
-                println("[plugin-service] failed to load official plugin $id: ${e.message}")
-            }
-        }
-
-        // Load external plugins from plugins directory
-        loadExternalPlugins(plugins)
-
-        return plugins
-    }
-
-    private fun loadExternalPlugins(plugins: MutableList<ChannelPort>) {
-        if (!Files.exists(pluginsDir) || !Files.isDirectory(pluginsDir)) {
-            return
-        }
-
-        Files.list(pluginsDir).use { stream ->
-            stream.filter { Files.isDirectory(it) }
-                .forEach { pluginDir ->
-                    loadExternalPlugin(pluginDir)?.let {
-                        plugins.add(it)
-                    }
-                }
+        // Start enabled plugins
+        plugins.filter { it.isEnabled }.forEach { plugin ->
+            startPlugin(plugin.id)
         }
     }
-
-    private fun loadExternalPlugin(pluginDir: Path): ChannelPort? {
-        val manifestPath = pluginDir.resolve("plugin.json")
-        val jarPath = pluginDir.resolve("plugin.jar")
-
-        // Check if this is an external plugin (has both manifest and JAR)
-        if (!Files.exists(manifestPath) || !Files.exists(jarPath)) {
-            return null
+    
+    fun stopAll() {
+        runningPlugins.forEach { (id, scope) ->
+            println("[${id.value}] stopping")
+            // Cancel the scope
+            // Note: ChannelPort.stop() should be called for clean shutdown
         }
-
-        val manifest = loadManifest(manifestPath) ?: run {
-            println("[plugin-service] failed to parse manifest: $manifestPath")
-            return null
-        }
-
-        // Skip if an official plugin with same ID already loaded
-        if (officialPlugins.containsKey(manifest.id)) {
-            println("[plugin-service] skipping external plugin '${manifest.id}' - official plugin exists")
-            return null
-        }
-
-        return instantiateExternalPlugin(manifest, jarPath, pluginDir)
+        runningPlugins.clear()
     }
-
-    private fun loadManifest(path: Path): PluginManifest? {
-        if (!Files.exists(path)) return null
-        return runCatching {
-            json.decodeFromString(PluginManifest.serializer(), Files.readString(path))
-        }.getOrNull()
+    
+    fun enablePlugin(id: String): Boolean {
+        return pluginManager.enable(PluginId(id))
     }
-
-    private fun instantiateExternalPlugin(manifest: PluginManifest, jarPath: Path, pluginDir: Path): ChannelPort? {
-        return runCatching {
-            // Create URLClassLoader with the plugin JAR
-            val classLoader = URLClassLoader(
-                arrayOf(jarPath.toUri().toURL()),
-                this::class.java.classLoader
+    
+    fun disablePlugin(id: String): Boolean {
+        return pluginManager.disable(PluginId(id))
+    }
+    
+    fun reloadPlugin(id: String): Boolean {
+        val pluginId = PluginId(id)
+        val reloaded = pluginManager.reload(pluginId)
+        return reloaded != null
+    }
+    
+    fun listPlugins(): List<PluginInfo> {
+        return pluginManager.getAll().map { 
+            PluginInfo(
+                id = it.id.value,
+                version = it.version.toString(),
+                type = it.type.name.lowercase(),
+                source = it.source.name.lowercase(),
+                status = it.status.name.lowercase(),
+                enabled = it.isEnabled
             )
-
-            // Load the plugin class
-            val pluginClass = classLoader.loadClass(manifest.entryPoint)
-
-            // Find appropriate constructor
-            // Try constructors in order: (PluginManifest), (PlatformConfig), (Map), no-args
-            val instance = when {
-                // Constructor with PluginManifest
-                pluginClass.constructors.any { it.parameterCount == 1 && it.parameterTypes[0] == PluginManifest::class.java } -> {
-                    pluginClass.getConstructor(PluginManifest::class.java).newInstance(manifest)
-                }
-                // Constructor with PlatformConfig
-                pluginClass.constructors.any { it.parameterCount == 1 && it.parameterTypes[0] == PlatformConfig::class.java } -> {
-                    pluginClass.getConstructor(PlatformConfig::class.java).newInstance(config)
-                }
-                // Constructor with JsonObject for raw config
-                pluginClass.constructors.any { it.parameterCount == 1 && it.parameterTypes[0] == JsonObject::class.java } -> {
-                    val pluginConfig = extractPluginConfig(manifest.id)
-                    pluginClass.getConstructor(JsonObject::class.java).newInstance(pluginConfig)
-                }
-                // No-args constructor
-                else -> {
-                    pluginClass.getConstructor().newInstance()
-                }
-            }
-
-            // Verify it implements ChannelPort
-            if (instance !is ChannelPort) {
-                println("[plugin-service] plugin class does not implement ChannelPort: ${manifest.entryPoint}")
-                return null
-            }
-
-            // Verify ID matches manifest
-            if (instance.id != manifest.id) {
-                println("[plugin-service] warning: plugin ID mismatch. Manifest: ${manifest.id}, Instance: ${instance.id}")
-            }
-
-            println("[plugin-service] loaded external plugin: ${manifest.id} v${manifest.version}")
-            instance
-
-        }.getOrElse { e ->
-            println("[plugin-service] failed to load external plugin ${manifest.id}: ${e.message}")
-            e.printStackTrace()
-            null
         }
     }
 
-    private fun extractPluginConfig(pluginId: String): JsonObject {
-        // Extract the plugin's config section from platform config
-        // This is a simplified version - in practice you might want to serialize the config properly
-        return json.parseToJsonElement(json.encodeToString(PlatformConfig.serializer(), config)).jsonObject
-    }
-    
-    private fun startPlugin(plugin: ChannelPort) {
+    private fun startPlugin(id: PluginId) {
+        val plugin = pluginManager.get(id) ?: return
+        
         val handler = CoroutineExceptionHandler { _, throwable ->
-            println("[${plugin.id}] coroutine error: ${throwable.message}")
+            println("[${id.value}] coroutine error: ${throwable.message}")
         }
-        CoroutineScope(Dispatchers.IO + handler).launch {
-            println("[${plugin.id}] starting")
-            plugin.start { inbound ->
-                val sessionKey = buildSessionKey(inbound)
-                indexStore.touchSession(sessionKey)
-                
-                println(
-                    "[${plugin.id}] message chat=${inbound.chatId} user=${inbound.userId} " +
-                        "group=${inbound.isGroup} mentioned=${inbound.isMentioned}"
-                )
-                
-                plugin.send(
-                    OutboundMessage(
-                        channelId = inbound.channelId,
-                        chatId = inbound.chatId,
-                        text = inbound.text
-                    )
-                ).onFailure { error ->
-                    println("[${plugin.id}] send failed: ${error.message}")
-                }
+        
+        val scope = CoroutineScope(Dispatchers.IO + handler)
+        runningPlugins[id] = scope
+        
+        scope.launch {
+            println("[${id.value}] starting")
+            plugin.instance.start { inbound ->
+                handleInboundMessage(plugin.instance, inbound)
             }
         }
     }
     
-    private fun buildSessionKey(inbound: agent.sdk.InboundMessage): String {
+    private suspend fun handleInboundMessage(plugin: ChannelPort, inbound: InboundMessage) {
+        val sessionKey = buildSessionKey(inbound)
+        indexStore.touchSession(sessionKey)
+        
+        println(
+            "[${plugin.id}] message chat=${inbound.chatId} user=${inbound.userId} " +
+                "group=${inbound.isGroup} mentioned=${inbound.isMentioned}"
+        )
+        
+        // Echo for now - replace with actual agent routing
+        plugin.send(
+            OutboundMessage(
+                channelId = inbound.channelId,
+                chatId = inbound.chatId,
+                text = inbound.text
+            )
+        ).onFailure { error ->
+            println("[${plugin.id}] send failed: ${error.message}")
+        }
+    }
+    
+    private fun buildSessionKey(inbound: InboundMessage): String {
         return if (inbound.isGroup) {
             "agent:${config.agent.id}:${inbound.channelId}:group:${inbound.chatId}"
         } else {
             "agent:${config.agent.id}:main"
         }
     }
+    
+    /**
+     * Simple event listener that logs plugin events
+     */
+    private inner class LoggingEventListener : PluginEventListener {
+        override fun onEvent(event: PluginEvent) {
+            when (event) {
+                is PluginDiscovered -> 
+                    println("[plugin] discovered: ${event.pluginId} v${event.version} (${event.source.name.lowercase()})")
+                is PluginLoaded -> 
+                    println("[plugin] loaded: ${event.pluginId} v${event.version} (${event.source.name.lowercase()})")
+                is PluginEnabled -> 
+                    println("[plugin] enabled: ${event.pluginId}")
+                is PluginDisabled -> 
+                    println("[plugin] disabled: ${event.pluginId}")
+                is PluginReloaded -> 
+                    println("[plugin] reloaded: ${event.pluginId}")
+                is PluginError -> 
+                    println("[plugin] error: ${event.pluginId} - ${event.message}")
+                is PluginSkipped -> 
+                    println("[plugin] skipped: ${event.pluginId} - ${event.reason}")
+            }
+        }
+    }
 }
+
+data class PluginInfo(
+    val id: String,
+    val version: String,
+    val type: String,
+    val source: String,
+    val status: String,
+    val enabled: Boolean
+)
