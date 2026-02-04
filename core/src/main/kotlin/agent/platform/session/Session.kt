@@ -24,7 +24,7 @@ data class Session(
     val messages: List<Message> = emptyList(),
     val config: CompactionConfig = CompactionConfig(),
     val metadata: SessionMetadata = SessionMetadata(),
-    val summaries: List<CompactedSummary> = emptyList()
+    val summaries: List<CompactionSummary> = emptyList()
 ) {
     /**
      * Adds a message to the session and updates metadata.
@@ -110,7 +110,7 @@ data class Session(
 
         // Create summary of compacted content
         val summary = if (compactedMessages.isNotEmpty()) {
-            CompactedSummary(
+            CompactionSummary(
                 id = UUID.randomUUID().toString(),
                 messageRangeStart = 0,
                 messageRangeEnd = compactedMessages.size,
@@ -228,7 +228,7 @@ data class Session(
 /**
  * Summary of a compacted session segment.
  */
-data class CompactedSummary(
+data class CompactionSummary(
     val id: String,
     val messageRangeStart: Int,
     val messageRangeEnd: Int,
