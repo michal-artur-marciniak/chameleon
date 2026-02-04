@@ -1,122 +1,128 @@
 package agent.platform.agent
 
+import agent.platform.agent.domain.AgentLoop
+import agent.platform.agent.domain.DomainEventPublisherPort
+import agent.platform.agent.domain.TurnEvent
 import agent.platform.config.PlatformConfig
-import agent.platform.llm.ChatCompletionEvent
-import agent.platform.llm.ChatCompletionRequest
 import agent.platform.llm.ModelRefResolver
 import agent.platform.llm.ProviderRegistry
-import agent.platform.llm.ModelRef
 import agent.platform.logging.LogWrapper
 import agent.platform.session.Message
 import agent.platform.session.MessageRole
 import agent.platform.session.SessionManager
-import agent.platform.tool.ToolCallRequest
+import agent.platform.session.SessionRepository
 import agent.platform.tool.ToolRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.catch
 import org.slf4j.LoggerFactory
 
+/**
+ * Infrastructure adapter that delegates to the AgentLoop domain aggregate.
+ * 
+ * This adapter wires infrastructure concerns (provider resolution, session management)
+ * to the domain aggregate while keeping business logic in the domain layer.
+ */
 class DefaultAgentLoop(
     private val config: PlatformConfig,
     private val sessionManager: SessionManager,
+    private val sessionRepository: SessionRepository,
     private val contextAssembler: ContextAssembler,
     private val toolRegistry: ToolRegistry,
     private val providerRegistry: ProviderRegistry,
-    private val modelRefResolver: ModelRefResolver
-) : AgentLoop {
+    private val modelRefResolver: ModelRefResolver,
+    private val eventPublisher: DomainEventPublisherPort? = null
+) : agent.platform.agent.AgentLoop {
     private val logger = LoggerFactory.getLogger(DefaultAgentLoop::class.java)
     private val stacktrace = config.logging.stacktrace
 
     override fun run(request: AgentRunRequest): Flow<AgentEvent> = flow {
         val runId = request.runId
+        
         sessionManager.withSessionLock(request.sessionKey) { session ->
+            // Create the domain aggregate
+            val agentLoop = AgentLoop.create(request.agentId)
+            
+            // Build user message
             val userMessage = Message(MessageRole.USER, request.inbound.text)
-            val updatedSession = session.withMessage(userMessage)
-            sessionManager.append(updatedSession.id, userMessage)
-
-            val context = contextAssembler.build(updatedSession, toolRegistry)
+            
+            // Build context bundle with model info
+            val context = contextAssembler.build(session.withMessage(userMessage), toolRegistry)
             val modelRef = resolveModel(request.agentId)
-            val llm = providerRegistry.get(modelRef.providerId)
-            val llmRequest = ChatCompletionRequest(
-                model = modelRef.modelId,
-                messages = toChatMessages(context),
-                toolSchemasJson = context.toolSchemasJson
+            val llmProvider = providerRegistry.get(modelRef.providerId)
+            
+            // Create context bundle with model/provider info
+            val contextWithModelInfo = context.copy(
+                systemPrompt = context.systemPrompt + "\n\nModel: ${modelRef.modelId}"
             )
-
-            val toolCalls = mutableListOf<ToolCallRequest>()
-            val assistantBuffer = StringBuilder()
-            llm.stream(llmRequest).collect { event ->
-                when (event) {
-                    is ChatCompletionEvent.AssistantDelta -> {
-                        emit(AgentEvent.AssistantDelta(runId, event.text, event.reasoning))
-                        if (!event.text.isBlank()) {
-                            assistantBuffer.append(event.text)
-                        }
+            
+            // Prepare dependencies for the domain aggregate
+            val deps = AgentLoop.TurnDependencies(
+                sessionRepository = sessionRepository,
+                toolRegistry = toolRegistry,
+                llmProvider = llmProvider,
+                contextBundle = contextWithModelInfo,
+                eventPublisher = eventPublisher
+            )
+            
+            // Delegate to domain aggregate
+            agentLoop.runTurn(runId, session, userMessage, deps).collect { turnEvent ->
+                // Map domain turn events to infrastructure AgentEvents
+                when (turnEvent) {
+                    is TurnEvent.AssistantDelta -> {
+                        emit(AgentEvent.AssistantDelta(
+                            runId = turnEvent.runId,
+                            text = turnEvent.text,
+                            reasoning = turnEvent.reasoning,
+                            done = turnEvent.done
+                        ))
                     }
-                    is ChatCompletionEvent.ToolCallDelta -> {
-                        toolCalls.add(
-                            ToolCallRequest(event.id, event.name, event.argumentsJson)
+                    is TurnEvent.ToolStarted -> {
+                        emit(AgentEvent.ToolEvent(
+                            runId = turnEvent.runId,
+                            tool = turnEvent.toolName,
+                            phase = ToolPhase.START
+                        ))
+                    }
+                    is TurnEvent.ToolCompleted -> {
+                        emit(AgentEvent.ToolEvent(
+                            runId = turnEvent.runId,
+                            tool = turnEvent.toolName,
+                            phase = ToolPhase.END,
+                            payload = turnEvent.result.content
+                        ))
+                    }
+                    is TurnEvent.ToolValidationError -> {
+                        // Log validation errors but don't emit as they don't affect flow
+                        logger.warn(
+                            "[agent] Tool validation error: runId={}, tool={}, error={}",
+                            turnEvent.runId.value,
+                            turnEvent.toolName,
+                            turnEvent.error
                         )
                     }
-                    is ChatCompletionEvent.Completed -> {
-                        emit(AgentEvent.AssistantDelta(runId, "", done = true))
+                    is TurnEvent.TurnCompleted -> {
+                        logger.debug(
+                            "[agent] Turn completed: runId={}, durationMs={}",
+                            turnEvent.runId.value,
+                            turnEvent.durationMs
+                        )
                     }
                 }
             }
-
-            val assistantText = assistantBuffer.toString().trim()
-            if (assistantText.isNotBlank()) {
-                sessionManager.append(
-                    updatedSession.id,
-                    Message(role = MessageRole.ASSISTANT, content = assistantText)
-                )
-            }
-
-            toolCalls.forEach { call ->
-                emit(AgentEvent.ToolEvent(runId, call.name, ToolPhase.START))
-                val result = toolRegistry.execute(call)
-                emit(AgentEvent.ToolEvent(runId, call.name, ToolPhase.END, result.content))
-                sessionManager.append(
-                    updatedSession.id,
-                    Message(
-                        role = MessageRole.TOOL,
-                        content = result.content,
-                        toolCallId = call.id
-                    )
-                )
-            }
-
-            sessionManager.maybeCompact(updatedSession)
+            
+            // Trigger compaction check
+            sessionManager.maybeCompact(session.withMessage(userMessage))
         }
     }.catch { e ->
         LogWrapper.error(logger, "[agent] loop error", e, stacktrace)
         throw e
     }
 
-    private fun resolveModel(agentId: String): ModelRef {
+    private fun resolveModel(agentId: String): agent.platform.llm.ModelRef {
         val defaultModel = config.agents.defaults.model.primary
         val agent = config.agents.list.firstOrNull { it.id == agentId }
         val modelRef = agent?.model?.primary ?: defaultModel
         return modelRefResolver.resolve(modelRef)
-    }
-
-    private fun toChatMessages(context: ContextBundle): List<agent.platform.llm.ChatMessage> {
-        val messages = mutableListOf(
-            agent.platform.llm.ChatMessage("system", context.systemPrompt)
-        )
-        context.messages.forEach { message ->
-            messages.add(agent.platform.llm.ChatMessage(toRole(message.role), message.content))
-        }
-        return messages
-    }
-
-    private fun toRole(role: MessageRole): String {
-        return when (role) {
-            MessageRole.SYSTEM -> "system"
-            MessageRole.USER -> "user"
-            MessageRole.ASSISTANT -> "assistant"
-            MessageRole.TOOL -> "tool"
-        }
     }
 }

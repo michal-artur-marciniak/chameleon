@@ -1,5 +1,6 @@
 package agent.platform.agent
 
+import agent.platform.agent.domain.DomainEventPublisherPort
 import agent.platform.config.PlatformConfig
 import agent.platform.llm.ModelRefResolver
 import agent.platform.llm.OpenAiCompatProvider
@@ -10,7 +11,10 @@ import agent.platform.tool.InMemoryToolRegistry
 import java.nio.file.Paths
 
 object AgentRuntimeFactory {
-    fun create(config: PlatformConfig): AgentRuntime {
+    fun create(
+        config: PlatformConfig,
+        eventPublisher: DomainEventPublisherPort? = null
+    ): AgentRuntime {
         val sessionRepo = SessionFileRepository(Paths.get(config.agents.defaults.workspace))
         val sessionManager = DefaultSessionManager(sessionRepo)
         val toolRegistry = InMemoryToolRegistry()
@@ -20,10 +24,12 @@ object AgentRuntimeFactory {
         val loop = DefaultAgentLoop(
             config = config,
             sessionManager = sessionManager,
+            sessionRepository = sessionRepo,
             contextAssembler = contextAssembler,
             toolRegistry = toolRegistry,
             providerRegistry = registry,
-            modelRefResolver = resolver
+            modelRefResolver = resolver,
+            eventPublisher = eventPublisher
         )
         return DefaultAgentRuntime(config, loop)
     }
