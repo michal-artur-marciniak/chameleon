@@ -1,5 +1,6 @@
 package agent.platform
 
+import agent.platform.agent.LoggingDomainEventPublisher
 import agent.platform.config.ConfigLoader
 import agent.platform.config.StartupLogger
 import agent.platform.logging.LoggingConfigurator
@@ -17,7 +18,8 @@ fun main(args: Array<String>) {
         port = loaded.config.gateway.port
     )
 
-    PluginService(loaded.config, loaded.configPath).startAll()
+    val eventPublisher = LoggingDomainEventPublisher()
+    PluginService(loaded.config, loaded.configPath, eventPublisher).startAll()
 
     server.start(wait = true)
 }

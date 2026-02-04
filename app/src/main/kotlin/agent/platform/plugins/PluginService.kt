@@ -1,8 +1,10 @@
 package agent.platform.plugins
 
+import agent.platform.application.HandleInboundMessageUseCase
 import agent.platform.config.PlatformConfig
 import agent.platform.logging.LogWrapper
-import agent.platform.session.SessionKey
+import agent.platform.agent.AgentRuntimeFactory
+import agent.platform.agent.domain.DomainEventPublisherPort
 import agent.platform.plugins.domain.PluginEvent
 import agent.platform.plugins.domain.PluginEventListener
 import agent.platform.plugins.domain.PluginId
@@ -15,12 +17,8 @@ import agent.platform.plugins.domain.PluginDisabled
 import agent.platform.plugins.domain.PluginReloaded
 import agent.platform.plugins.domain.PluginError
 import agent.platform.plugins.domain.PluginSkipped
-import agent.platform.agent.AgentRuntimeFactory
-import agent.platform.agent.AgentRunRequest
-import agent.platform.agent.AgentEvent
 import agent.sdk.ChannelPort
 import agent.sdk.InboundMessage
-import agent.sdk.OutboundMessage
 import agent.platform.plugins.FileSystemPluginRepository
 import agent.platform.plugins.OfficialPluginRegistry
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -39,7 +37,8 @@ import java.nio.file.Paths
  */
 class PluginService(
     private val config: PlatformConfig,
-    private val configPath: Path?
+    private val configPath: Path?,
+    private val eventPublisher: DomainEventPublisherPort? = null
 ) {
     private val logger = LoggerFactory.getLogger(PluginService::class.java)
     private val stacktrace = config.logging.stacktrace
@@ -48,6 +47,7 @@ class PluginService(
     private val pluginManager: PluginManager
     private val runningPlugins = mutableMapOf<PluginId, CoroutineScope>()
     private val agentRuntime = AgentRuntimeFactory.create(config)
+    private val handleInboundMessageUseCase = HandleInboundMessageUseCase(agentRuntime, eventPublisher)
     
     init {
         val officialRegistry = OfficialPluginRegistry()
@@ -127,7 +127,6 @@ class PluginService(
     }
     
     private suspend fun handleInboundMessage(plugin: ChannelPort, inbound: InboundMessage) {
-        val sessionKey = SessionKey.parse(buildSessionKey(inbound))
         logger.info(
             "[{}] message chat={} user={} group={} mentioned={}",
             plugin.id,
@@ -137,51 +136,14 @@ class PluginService(
             inbound.isMentioned
         )
 
-        val handle = agentRuntime.start(
-            AgentRunRequest(
-                sessionKey = sessionKey,
-                inbound = inbound,
-                agentId = config.agents.list.firstOrNull { it.default }?.id ?: "main"
-            )
+        val agentId = config.agents.list.firstOrNull { it.default }?.id ?: "main"
+        
+        // Use UC-001: HandleInboundMessageUseCase to process the message through DDD agent runtime
+        handleInboundMessageUseCase.executeAndRespond(
+            channel = plugin,
+            inbound = inbound,
+            agentId = agentId
         )
-
-        var buffer = StringBuilder()
-        handle.events.collect { event ->
-            when (event) {
-                is AgentEvent.AssistantDelta -> {
-                    if (!event.done) {
-                        buffer.append(event.text)
-                    }
-                }
-                is AgentEvent.Lifecycle -> {
-                    if (event.phase == agent.platform.agent.Phase.END || event.phase == agent.platform.agent.Phase.ERROR) {
-                        val reply = buffer.toString().ifBlank { "" }
-                        if (reply.isNotBlank()) {
-                            plugin.send(
-                                OutboundMessage(
-                                    channelId = inbound.channelId,
-                                    chatId = inbound.chatId,
-                                    text = reply
-                                )
-                            ).onFailure { error ->
-                                LogWrapper.error(logger, "[${plugin.id}] send failed", error, stacktrace)
-                            }
-                        }
-                        buffer = StringBuilder()
-                    }
-                }
-                else -> Unit
-            }
-        }
-    }
-    
-    private fun buildSessionKey(inbound: InboundMessage): String {
-        val defaultAgentId = config.agents.list.firstOrNull { it.default }?.id ?: "main"
-        return if (inbound.isGroup) {
-            "agent:$defaultAgentId:${inbound.channelId}:group:${inbound.chatId}"
-        } else {
-            "agent:$defaultAgentId:${inbound.channelId}:dm:${inbound.chatId}"
-        }
     }
     
     /**
