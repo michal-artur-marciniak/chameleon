@@ -73,15 +73,15 @@ class AgentLoop private constructor(
         val startTime = Instant.now()
         
         // 1. Add user message to session
-        val sessionWithUserMessage = session.withMessage(userMessage)
+        val (sessionWithUserMessage, messageAddedEvent) = session.withMessage(userMessage)
         deps.sessionRepository.appendMessage(session.id, userMessage)
-        
+
         deps.eventPublisher?.publish(
             AgentLoopDomainEvent.MessageAdded(
                 runId = runId,
                 sessionId = session.id,
                 role = "user",
-                messageId = UUID.randomUUID().toString()
+                messageId = messageAddedEvent.messageId
             )
         )
 

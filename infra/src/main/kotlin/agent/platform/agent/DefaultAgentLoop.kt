@@ -45,9 +45,10 @@ class DefaultAgentLoop(
             
             // Build user message
             val userMessage = Message(MessageRole.USER, request.inbound.text)
-            
+
             // Build context bundle with model info
-            val context = contextAssembler.build(session.withMessage(userMessage), toolRegistry)
+            val (sessionWithMessage, _) = session.withMessage(userMessage)
+            val context = contextAssembler.build(sessionWithMessage, toolRegistry)
             val modelRef = resolveModel(request.agentId)
             val llmProvider = providerRegistry.get(modelRef.providerId)
             
@@ -112,7 +113,7 @@ class DefaultAgentLoop(
             }
             
             // Trigger compaction check
-            sessionManager.maybeCompact(session.withMessage(userMessage))
+            sessionManager.maybeCompact(sessionWithMessage)
         }
     }.catch { e ->
         LogWrapper.error(logger, "[agent] loop error", e, stacktrace)
