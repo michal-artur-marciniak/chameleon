@@ -11,6 +11,33 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 - `plugins/telegram` - built-in Telegram channel plugin
 - `extensions/` - external plugin drop-ins (created at runtime)
 
+## Session Aggregate (DDD Core Domain)
+
+Sessions manage conversation history and enforce compaction rules as a domain aggregate:
+
+### Key Features
+
+**Compaction Rules (Invariant-Enforced)**
+- `shouldCompact()` - Determines when compaction is needed based on token/message thresholds
+- `compact()` - Summarizes old messages while preserving the most recent user message
+- `pruneToolResults()` - Removes bulky tool outputs while keeping transcript entries
+
+**Domain Events**
+- `ContextCompacted` - Emitted when session is compacted with summary info
+- `MessageAdded` - Emitted when new message appended
+- `ToolResultsPruned` - Emitted when tool outputs are cleaned up
+
+**Invariants**
+1. SessionKey is immutable and unique (set at creation)
+2. Compaction never drops the most recent user message
+3. Tool results can be pruned but transcript remains append-only
+4. Summaries accumulate in the `summaries` list
+
+**Key Files**
+- `core/src/main/kotlin/agent/platform/session/Session.kt` - Domain aggregate
+- `core/src/main/kotlin/agent/platform/session/SessionDomainEvents.kt` - Domain events
+- `core/src/main/kotlin/agent/platform/session/CompactionConfig.kt` - Threshold configuration
+
 ## Agent Loop (DDD Core Domain)
 
 Inbound channel messages run through a **domain-driven agent loop** with clear separation between domain logic and infrastructure:
