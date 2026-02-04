@@ -5,7 +5,8 @@ import agent.platform.agent.domain.DomainEventPublisherPort
 import agent.platform.agent.domain.TurnEvent
 import agent.platform.config.PlatformConfig
 import agent.platform.llm.ModelRefResolver
-import agent.platform.llm.ProviderRegistry
+import agent.platform.llm.ModelRefResolutionError
+import agent.platform.llm.LlmProviderRepositoryPort
 import agent.platform.logging.LogWrapper
 import agent.platform.session.Message
 import agent.platform.session.MessageRole
@@ -29,7 +30,7 @@ class DefaultAgentLoop(
     private val sessionRepository: SessionRepository,
     private val contextAssembler: ContextAssembler,
     private val toolRegistry: ToolRegistry,
-    private val providerRegistry: ProviderRegistry,
+    private val providerRegistry: LlmProviderRepositoryPort,
     private val modelRefResolver: ModelRefResolver,
     private val eventPublisher: DomainEventPublisherPort? = null
 ) : agent.platform.agent.AgentLoop {
@@ -51,6 +52,7 @@ class DefaultAgentLoop(
             val context = contextAssembler.build(sessionWithMessage, toolRegistry)
             val modelRef = resolveModel(request.agentId)
             val llmProvider = providerRegistry.get(modelRef.providerId)
+                ?: throw IllegalStateException("LLM provider not registered: ${modelRef.providerId}")
             
             // Create context bundle with model/provider info
             val contextWithModelInfo = context.copy(
@@ -124,6 +126,19 @@ class DefaultAgentLoop(
         val defaultModel = config.agents.defaults.model.primary
         val agent = config.agents.list.firstOrNull { it.id == agentId }
         val modelRef = agent?.model?.primary ?: defaultModel
-        return modelRefResolver.resolve(modelRef)
+        val resolution = modelRefResolver.resolve(modelRef)
+        return resolution.modelRef ?: throw IllegalStateException(formatModelRefError(modelRef, resolution.error))
+    }
+
+    private fun formatModelRefError(modelRef: String, error: ModelRefResolutionError?): String {
+        return when (error) {
+            is ModelRefResolutionError.BlankModelRef -> error.message
+            is ModelRefResolutionError.MissingModelId -> error.message
+            is ModelRefResolutionError.NoProvidersConfigured -> error.message
+            is ModelRefResolutionError.UnknownProvider ->
+                "Unknown provider '${error.providerId}'. Configured: ${error.configured.sorted()}"
+            is ModelRefResolutionError.ProviderPrefixRequired -> error.message
+            null -> "Failed to resolve model ref '$modelRef'"
+        }
     }
 }

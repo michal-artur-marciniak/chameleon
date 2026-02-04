@@ -20,7 +20,7 @@ object AgentRuntimeFactory {
         val toolRegistry = InMemoryToolRegistry()
         val contextAssembler = DefaultContextAssembler(config)
         val registry = buildProviders(config)
-        val resolver = ModelRefResolver(registry.ids())
+        val resolver = ModelRefResolver(registry)
         val loop = DefaultAgentLoop(
             config = config,
             sessionManager = sessionManager,

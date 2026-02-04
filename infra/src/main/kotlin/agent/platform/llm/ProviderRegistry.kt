@@ -1,14 +1,12 @@
 package agent.platform.llm
 
 import agent.platform.llm.LlmProviderPort
+import agent.platform.llm.LlmProviderRepositoryPort
 
 class ProviderRegistry(
     private val providers: Map<String, LlmProviderPort>
-) {
-    fun get(providerId: String): LlmProviderPort {
-        return providers[providerId]
-            ?: error("LLM provider not registered: $providerId")
-    }
+) : LlmProviderRepositoryPort {
+    override fun get(providerId: String): LlmProviderPort? = providers[providerId]
 
-    fun ids(): Set<String> = providers.keys
+    override fun list(): Set<String> = providers.keys
 }
