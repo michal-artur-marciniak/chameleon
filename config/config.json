@@ -22,7 +22,7 @@
         "primary": "kimi/kimi-k2.5"
       },
       "workspace": "/app/workspace",
-      "extensionsDir": "/app/extensions",
+      "extensionsDir": "extensions",
       "contextTokens": 128000,
       "timeoutSeconds": 600,
       "thinkingDefault": "off",
@@ -70,7 +70,7 @@
   },
   "channels": {
     "telegram": {
-      "enabled": false,
+      "enabled": true,
       "token": "${TELEGRAM_TOKEN}",
       "mode": "polling",
       "requireMention": true,

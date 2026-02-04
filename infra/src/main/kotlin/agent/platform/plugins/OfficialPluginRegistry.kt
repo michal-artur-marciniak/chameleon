@@ -56,7 +56,10 @@ class OfficialPluginRegistry : PluginFactoryRegistry {
                 return null
             }
             
-            return TelegramPlugin(token = token, requireMentionInGroups = true)
+            return TelegramPlugin(
+                token = token,
+                requireMentionInGroups = telegramConfig.requireMention
+            )
         }
     }
 }

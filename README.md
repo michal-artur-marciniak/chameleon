@@ -4,9 +4,9 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 
 ## Modules
 
-- `app` - application entrypoint, DI, config (loader + default), server
+- `app` - application entrypoint, server
 - `core` - domain layer (pure Kotlin)
-- `infra` - infrastructure adapters
+- `infra` - infrastructure adapters (config loader, persistence)
 - `sdk` - plugin SDK interfaces
 - `plugins/telegram` - built-in Telegram channel plugin
 - `extensions/` - external plugin drop-ins (created at runtime)
@@ -16,6 +16,87 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 ```bash
 ./gradlew build
 ```
+
+## Configuration (OpenClaw-Compatible)
+
+Configuration loads from:
+1. `config/config.json`
+2. `app/src/main/resources/config.default.json`
+
+Environment variables are expanded with `${VAR_NAME}` syntax. Missing variables cause startup to fail.
+
+### Minimal Example
+
+```json
+{
+  "models": {
+    "providers": {
+      "kimi": {
+        "baseUrl": "https://api.moonshot.cn/v1",
+        "apiKey": "${KIMI_API_KEY}",
+        "models": [
+          {
+            "id": "kimi-k2.5",
+            "name": "Kimi K2.5",
+            "contextWindow": 256000,
+            "maxTokens": 8192,
+            "reasoning": true
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": { "primary": "kimi/kimi-k2.5" },
+      "workspace": "/app/workspace",
+      "extensionsDir": "/app/extensions",
+      "contextTokens": 128000,
+      "timeoutSeconds": 600,
+      "thinkingDefault": "off",
+      "verboseDefault": "off",
+      "compaction": {
+        "reserveTokensFloor": 20000,
+        "softThresholdTokens": 4000,
+        "memoryFlush": { "enabled": true }
+      }
+    },
+    "list": [{ "id": "main", "default": true }]
+  },
+  "messages": {
+    "groupChat": { "historyLimit": 50 },
+    "dm": { "historyLimit": 100 },
+    "queue": { "mode": "sequential", "cap": 10, "debounceMs": 100, "maxConcurrent": 1 }
+  },
+  "tools": {
+    "exec": {
+      "security": "allowlist",
+      "ask": "on-miss",
+      "safeBins": ["jq", "grep", "cut", "sort", "uniq", "head", "tail", "tr", "wc"]
+    },
+    "allow": ["read", "write", "edit", "exec", "memory_search", "memory_get"]
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "token": "${TELEGRAM_TOKEN}",
+      "mode": "polling",
+      "requireMention": true,
+      "allowedUsers": [],
+      "allowedGroups": []
+    }
+  },
+  "gateway": { "host": "0.0.0.0", "port": 18789 }
+}
+```
+
+### Key Config Sections
+
+- **models.providers**: LLM providers, API keys, model catalog
+- **agents.defaults**: global defaults (workspace, compaction, thinking/verbose)
+- **messages**: history limits + queue mode
+- **tools.exec**: exec security & allowlist
+- **channels.telegram**: token, mention requirements, allowlists
 
 ## Plugin System Architecture
 
@@ -69,7 +150,7 @@ Located in `plugins/` directory - concrete channel implementations:
   - Implements `ChannelPort` interface
   - Registered in `OfficialPluginRegistry` via `PluginFactory`
   - Uses Ktor HTTP client for Telegram Bot API
-  - Features: long-polling, webhook cleanup, @mention detection
+  - Features: long-polling, webhook cleanup, @mention detection, mention gating
 
 **External Plugins** (loaded from filesystem):
 - Drop JAR + `plugin.json` into `extensions/<name>/`
@@ -236,7 +317,22 @@ Configuration is loaded in order of priority:
 1. `config/config.json` (if exists in working directory)
 2. `app/src/main/resources/config.default.json` (bundled fallback)
 
-Environment variables are expanded using `${VAR_NAME}` syntax in config files.
+Environment variables are expanded using `${VAR_NAME}` syntax in config files. Missing variables cause startup to fail.
+
+### Session Storage
+
+Sessions follow OpenClaw-style persistence:
+
+```
+<workspace>/sessions/
+├── sessions.json          # index (metadata)
+└── <sessionId>.jsonl      # message transcript
+```
+
+Session keys look like:
+
+- DM: `agent:main:telegram:dm:123456`
+- Group: `agent:main:telegram:group:-1001234567890`
 
 Runtime directories are created automatically on startup:
 - `workspace/` - Session files and user data

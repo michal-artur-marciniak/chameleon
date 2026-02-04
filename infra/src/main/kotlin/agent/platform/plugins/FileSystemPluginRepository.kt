@@ -28,6 +28,7 @@ class FileSystemPluginRepository(
     
     override fun discover(): List<PluginManifest> {
         if (!Files.exists(extensionsDir) || !Files.isDirectory(extensionsDir)) {
+            println("[plugin-repository] extensions dir missing: $extensionsDir")
             return emptyList()
         }
         
@@ -40,7 +41,13 @@ class FileSystemPluginRepository(
                     val jarPath = pluginDir.resolve("plugin.jar")
                     
                     if (Files.exists(manifestPath) && Files.exists(jarPath)) {
+                        println("[plugin-repository] discovered: ${pluginDir.fileName}")
                         loadManifest(manifestPath)?.let { manifests.add(it) }
+                    } else {
+                        println(
+                            "[plugin-repository] skipping ${pluginDir.fileName}: " +
+                                "manifest=${Files.exists(manifestPath)} jar=${Files.exists(jarPath)}"
+                        )
                     }
                 }
         }

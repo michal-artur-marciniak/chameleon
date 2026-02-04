@@ -9,11 +9,15 @@ class ConfigLoader(
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) {
     fun load(): LoadedConfig {
-        val configPath = resolveConfigPath()
-        val envPath = resolveEnvPath(configPath)
-        val env = loadDotEnv(envPath)
-        val config = loadConfig(configPath, env)
-        return LoadedConfig(config, configPath, envPath)
+        return load(null, emptyMap())
+    }
+
+    fun load(configPath: Path?, envOverrides: Map<String, String> = emptyMap()): LoadedConfig {
+        val resolvedPath = configPath ?: resolveConfigPath()
+        val envPath = resolveEnvPath(resolvedPath)
+        val env = loadDotEnv(envPath) + envOverrides
+        val config = loadConfig(resolvedPath, env)
+        return LoadedConfig(config, resolvedPath, envPath)
     }
 
     private fun loadConfig(path: Path?, env: Map<String, String>): PlatformConfig {
@@ -24,14 +28,19 @@ class ConfigLoader(
             javaClass.classLoader.getResource("config.default.json")?.readText()
                 ?: return PlatformConfig()
         }
-        return json.decodeFromString(PlatformConfig.serializer(), expandEnv(content, env))
+        val expanded = expandEnv(content, env)
+        return json.decodeFromString(PlatformConfig.serializer(), expanded)
     }
 
     private fun expandEnv(raw: String, env: Map<String, String>): String {
         val regex = Regex("""\$\{([A-Z0-9_]+)}""")
         return regex.replace(raw) { match ->
             val key = match.groupValues[1]
-            env[key] ?: System.getenv(key) ?: match.value
+            val value = env[key] ?: System.getenv(key)
+            if (value.isNullOrBlank()) {
+                throw IllegalStateException("Missing required env var: $key")
+            }
+            value
         }
     }
 

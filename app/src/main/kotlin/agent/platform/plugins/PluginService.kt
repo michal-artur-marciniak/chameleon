@@ -1,7 +1,12 @@
 package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
-import agent.platform.persistence.SessionIndexStore
+import agent.platform.persistence.SessionFileRepository
+import agent.platform.session.Message
+import agent.platform.session.MessageRole
+import agent.platform.session.Session
+import agent.platform.session.SessionId
+import agent.platform.session.SessionKey
 import agent.platform.plugins.domain.PluginEvent
 import agent.platform.plugins.domain.PluginEventListener
 import agent.platform.plugins.domain.PluginId
@@ -36,9 +41,9 @@ class PluginService(
     private val config: PlatformConfig,
     private val configPath: Path?
 ) {
-    private val extensionsDir: Path = Paths.get(config.agent.extensionsDir)
-    private val workspace = Paths.get(config.agent.workspace)
-    private val indexStore = SessionIndexStore(workspace)
+    private val extensionsDir: Path = Paths.get(config.agents.defaults.extensionsDir)
+    private val workspace = Paths.get(config.agents.defaults.workspace)
+    private val sessionRepository = SessionFileRepository(workspace)
     
     private val pluginManager: PluginManager
     private val runningPlugins = mutableMapOf<PluginId, CoroutineScope>()
@@ -52,6 +57,7 @@ class PluginService(
 
     fun startAll() {
         // Load all plugins through the domain
+        println("[plugin] external dir=$extensionsDir")
         val plugins = pluginManager.loadAll()
 
         if (plugins.isEmpty()) {
@@ -120,8 +126,16 @@ class PluginService(
     }
     
     private suspend fun handleInboundMessage(plugin: ChannelPort, inbound: InboundMessage) {
-        val sessionKey = buildSessionKey(inbound)
-        indexStore.touchSession(sessionKey)
+        val sessionKey = SessionKey.parse(buildSessionKey(inbound))
+        val session = sessionRepository.findByKey(sessionKey)
+            ?: Session(
+                id = SessionId.generate(),
+                key = sessionKey
+            ).also { sessionRepository.save(it) }
+        sessionRepository.appendMessage(
+            session.id,
+            Message(role = MessageRole.USER, content = inbound.text)
+        )
         
         println(
             "[${plugin.id}] message chat=${inbound.chatId} user=${inbound.userId} " +
@@ -141,10 +155,11 @@ class PluginService(
     }
     
     private fun buildSessionKey(inbound: InboundMessage): String {
+        val defaultAgentId = config.agents.list.firstOrNull { it.default }?.id ?: "main"
         return if (inbound.isGroup) {
-            "agent:${config.agent.id}:${inbound.channelId}:group:${inbound.chatId}"
+            "agent:$defaultAgentId:${inbound.channelId}:group:${inbound.chatId}"
         } else {
-            "agent:${config.agent.id}:main"
+            "agent:$defaultAgentId:${inbound.channelId}:dm:${inbound.chatId}"
         }
     }
     
