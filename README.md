@@ -20,6 +20,34 @@ Inbound channel messages now run through an agent loop skeleton:
 - LLM routing uses provider/model refs (OpenAI-compatible providers configured under `models.providers`)
 - Tool registry is stubbed (`InMemoryToolRegistry`)
 
+## Application Layer (DDD Use Cases)
+
+The application layer implements use cases that orchestrate domain objects:
+
+Located in `app/src/main/kotlin/agent/platform/application/`:
+
+- **`HandleInboundMessageUseCase`** (UC-001) - Routes channel messages through DDD agent runtime
+  - Maps `InboundMessage` to `SessionKey` 
+  - Starts agent runs via `AgentRuntime`
+  - Streams lifecycle events (START, END, ERROR)
+  - Publishes domain events via `DomainEventPublisherPort`
+
+**Domain Events** (in `core/src/main/kotlin/agent/platform/agent/domain/`):
+- `AgentLoopStarted` - Run initiated
+- `ToolCallInitiated` - Tool execution started
+- `ToolExecuted` - Tool execution completed
+- `ResponseGenerated` - Assistant response created
+- `AgentLoopCompleted` - Run finished (success/error)
+
+**Usage Pattern**:
+```kotlin
+// In PluginService or channel adapters
+val useCase = HandleInboundMessageUseCase(agentRuntime, eventPublisher)
+useCase.executeAndRespond(channel, inboundMessage, agentId)
+```
+
+Channel adapters remain thin - all orchestration lives in the application layer.
+
 ## Build
 
 ```bash
