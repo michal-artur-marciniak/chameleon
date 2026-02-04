@@ -26,9 +26,9 @@ class SessionFileRepositoryTest {
         )
         val session = Session(
             id = SessionId.generate(),
-            key = key
+            key = key,
+            messages = listOf(Message(role = MessageRole.USER, content = "hello"))
         )
-        session.addMessage(Message(role = MessageRole.USER, content = "hello"))
 
         repo.save(session)
 

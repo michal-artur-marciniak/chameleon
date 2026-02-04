@@ -11,6 +11,15 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 - `plugins/telegram` - built-in Telegram channel plugin
 - `extensions/` - external plugin drop-ins (created at runtime)
 
+## Agent Loop (MVP)
+
+Inbound channel messages now run through an agent loop skeleton:
+
+- Runtime + loop contracts live in `core/src/main/kotlin/agent/platform/agent/`
+- Infra wiring is in `infra/src/main/kotlin/agent/platform/agent/`
+- LLM provider and tool registry are stubbed (`StubLlmProvider`, `InMemoryToolRegistry`)
+- Replies echo input with a stub prefix until a real provider is wired
+
 ## Build
 
 ```bash

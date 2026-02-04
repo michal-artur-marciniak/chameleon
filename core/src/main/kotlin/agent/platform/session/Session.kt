@@ -1,18 +1,15 @@
 package agent.platform.session
 
-class Session(
+data class Session(
     val id: SessionId,
     val key: SessionKey,
-    messages: List<Message> = emptyList(),
+    val messages: List<Message> = emptyList(),
     val config: CompactionConfig = CompactionConfig(),
     val metadata: SessionMetadata = SessionMetadata()
 ) {
-    private val storedMessages = messages.toMutableList()
-    val messages: List<Message> get() = storedMessages.toList()
-
-    fun addMessage(message: Message) {
-        storedMessages.add(message)
-        metadata.touch()
+    fun withMessage(message: Message): Session {
+        val updated = metadata.copy(updatedAt = System.currentTimeMillis())
+        return copy(messages = messages + message, metadata = updated)
     }
 
     fun shouldCompact(currentTokens: Int, maxTokens: Int): Boolean {

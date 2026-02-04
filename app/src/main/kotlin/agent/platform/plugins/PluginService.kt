@@ -2,11 +2,6 @@ package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
 import agent.platform.logging.LogWrapper
-import agent.platform.persistence.SessionFileRepository
-import agent.platform.session.Message
-import agent.platform.session.MessageRole
-import agent.platform.session.Session
-import agent.platform.session.SessionId
 import agent.platform.session.SessionKey
 import agent.platform.plugins.domain.PluginEvent
 import agent.platform.plugins.domain.PluginEventListener
@@ -20,6 +15,9 @@ import agent.platform.plugins.domain.PluginDisabled
 import agent.platform.plugins.domain.PluginReloaded
 import agent.platform.plugins.domain.PluginError
 import agent.platform.plugins.domain.PluginSkipped
+import agent.platform.agent.AgentRuntimeFactory
+import agent.platform.agent.AgentRunRequest
+import agent.platform.agent.AgentEvent
 import agent.sdk.ChannelPort
 import agent.sdk.InboundMessage
 import agent.sdk.OutboundMessage
@@ -46,11 +44,10 @@ class PluginService(
     private val logger = LoggerFactory.getLogger(PluginService::class.java)
     private val stacktrace = config.logging.stacktrace
     private val extensionsDir: Path = Paths.get(config.agents.defaults.extensionsDir)
-    private val workspace = Paths.get(config.agents.defaults.workspace)
-    private val sessionRepository = SessionFileRepository(workspace)
     
     private val pluginManager: PluginManager
     private val runningPlugins = mutableMapOf<PluginId, CoroutineScope>()
+    private val agentRuntime = AgentRuntimeFactory.create(config)
     
     init {
         val officialRegistry = OfficialPluginRegistry()
@@ -131,16 +128,6 @@ class PluginService(
     
     private suspend fun handleInboundMessage(plugin: ChannelPort, inbound: InboundMessage) {
         val sessionKey = SessionKey.parse(buildSessionKey(inbound))
-        val session = sessionRepository.findByKey(sessionKey)
-            ?: Session(
-                id = SessionId.generate(),
-                key = sessionKey
-            ).also { sessionRepository.save(it) }
-        sessionRepository.appendMessage(
-            session.id,
-            Message(role = MessageRole.USER, content = inbound.text)
-        )
-        
         logger.info(
             "[{}] message chat={} user={} group={} mentioned={}",
             plugin.id,
@@ -149,16 +136,42 @@ class PluginService(
             inbound.isGroup,
             inbound.isMentioned
         )
-        
-        // Echo for now - replace with actual agent routing
-        plugin.send(
-            OutboundMessage(
-                channelId = inbound.channelId,
-                chatId = inbound.chatId,
-                text = inbound.text
+
+        val handle = agentRuntime.start(
+            AgentRunRequest(
+                sessionKey = sessionKey,
+                inbound = inbound,
+                agentId = config.agents.list.firstOrNull { it.default }?.id ?: "main"
             )
-        ).onFailure { error ->
-            LogWrapper.error(logger, "[${plugin.id}] send failed", error, stacktrace)
+        )
+
+        var buffer = StringBuilder()
+        handle.events.collect { event ->
+            when (event) {
+                is AgentEvent.AssistantDelta -> {
+                    if (!event.done) {
+                        buffer.append(event.text)
+                    }
+                }
+                is AgentEvent.Lifecycle -> {
+                    if (event.phase == agent.platform.agent.Phase.END || event.phase == agent.platform.agent.Phase.ERROR) {
+                        val reply = buffer.toString().ifBlank { "" }
+                        if (reply.isNotBlank()) {
+                            plugin.send(
+                                OutboundMessage(
+                                    channelId = inbound.channelId,
+                                    chatId = inbound.chatId,
+                                    text = reply
+                                )
+                            ).onFailure { error ->
+                                LogWrapper.error(logger, "[${plugin.id}] send failed", error, stacktrace)
+                            }
+                        }
+                        buffer = StringBuilder()
+                    }
+                }
+                else -> Unit
+            }
         }
     }
     
