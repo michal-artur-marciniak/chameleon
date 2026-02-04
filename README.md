@@ -17,8 +17,8 @@ Inbound channel messages now run through an agent loop skeleton:
 
 - Runtime + loop contracts live in `core/src/main/kotlin/agent/platform/agent/`
 - Infra wiring is in `infra/src/main/kotlin/agent/platform/agent/`
-- LLM provider and tool registry are stubbed (`StubLlmProvider`, `InMemoryToolRegistry`)
-- Replies echo input with a stub prefix until a real provider is wired
+- LLM routing uses provider/model refs (OpenAI-compatible providers configured under `models.providers`)
+- Tool registry is stubbed (`InMemoryToolRegistry`)
 
 ## Build
 

@@ -1,7 +1,9 @@
 package agent.platform.agent
 
 import agent.platform.config.PlatformConfig
-import agent.platform.llm.StubLlmProvider
+import agent.platform.llm.ModelRefResolver
+import agent.platform.llm.OpenAiCompatProvider
+import agent.platform.llm.ProviderRegistry
 import agent.platform.persistence.SessionFileRepository
 import agent.platform.session.DefaultSessionManager
 import agent.platform.tool.InMemoryToolRegistry
@@ -13,14 +15,27 @@ object AgentRuntimeFactory {
         val sessionManager = DefaultSessionManager(sessionRepo)
         val toolRegistry = InMemoryToolRegistry()
         val contextAssembler = DefaultContextAssembler(config)
-        val llmProvider = StubLlmProvider()
+        val registry = buildProviders(config)
+        val resolver = ModelRefResolver(registry.ids())
         val loop = DefaultAgentLoop(
             config = config,
             sessionManager = sessionManager,
             contextAssembler = contextAssembler,
             toolRegistry = toolRegistry,
-            llmProvider = llmProvider
+            providerRegistry = registry,
+            modelRefResolver = resolver
         )
         return DefaultAgentRuntime(config, loop)
+    }
+
+    private fun buildProviders(config: PlatformConfig): ProviderRegistry {
+        val providers = config.models.providers.mapValues { (_, providerConfig) ->
+            OpenAiCompatProvider(
+                baseUrl = providerConfig.baseUrl.trimEnd('/'),
+                apiKey = providerConfig.apiKey,
+                extraHeaders = providerConfig.headers
+            )
+        }
+        return ProviderRegistry(providers)
     }
 }

@@ -3,7 +3,9 @@ package agent.platform.agent
 import agent.platform.config.PlatformConfig
 import agent.platform.llm.ChatCompletionEvent
 import agent.platform.llm.ChatCompletionRequest
-import agent.platform.llm.LlmProviderPort
+import agent.platform.llm.ModelRefResolver
+import agent.platform.llm.ProviderRegistry
+import agent.platform.llm.ModelRef
 import agent.platform.logging.LogWrapper
 import agent.platform.session.Message
 import agent.platform.session.MessageRole
@@ -20,7 +22,8 @@ class DefaultAgentLoop(
     private val sessionManager: SessionManager,
     private val contextAssembler: ContextAssembler,
     private val toolRegistry: ToolRegistry,
-    private val llmProvider: LlmProviderPort
+    private val providerRegistry: ProviderRegistry,
+    private val modelRefResolver: ModelRefResolver
 ) : AgentLoop {
     private val logger = LoggerFactory.getLogger(DefaultAgentLoop::class.java)
     private val stacktrace = config.logging.stacktrace
@@ -33,15 +36,17 @@ class DefaultAgentLoop(
             sessionManager.append(updatedSession.id, userMessage)
 
             val context = contextAssembler.build(updatedSession, toolRegistry)
+            val modelRef = resolveModel(request.agentId)
+            val llm = providerRegistry.get(modelRef.providerId)
             val llmRequest = ChatCompletionRequest(
-                model = resolveModel(request.agentId),
+                model = modelRef.modelId,
                 messages = toChatMessages(context),
                 toolSchemasJson = context.toolSchemasJson
             )
 
             val toolCalls = mutableListOf<ToolCallRequest>()
             val assistantBuffer = StringBuilder()
-            llmProvider.stream(llmRequest).collect { event ->
+            llm.stream(llmRequest).collect { event ->
                 when (event) {
                     is ChatCompletionEvent.AssistantDelta -> {
                         emit(AgentEvent.AssistantDelta(runId, event.text, event.reasoning))
@@ -89,10 +94,11 @@ class DefaultAgentLoop(
         throw e
     }
 
-    private fun resolveModel(agentId: String): String {
+    private fun resolveModel(agentId: String): ModelRef {
         val defaultModel = config.agents.defaults.model.primary
         val agent = config.agents.list.firstOrNull { it.id == agentId }
-        return agent?.model?.primary ?: defaultModel
+        val modelRef = agent?.model?.primary ?: defaultModel
+        return modelRefResolver.resolve(modelRef)
     }
 
     private fun toChatMessages(context: ContextBundle): List<agent.platform.llm.ChatMessage> {
