@@ -11,14 +11,96 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 - `plugins/telegram` - built-in Telegram channel plugin
 - `extensions/` - external plugin drop-ins (created at runtime)
 
-## Agent Loop (MVP)
+## Agent Loop (DDD Core Domain)
 
-Inbound channel messages now run through an agent loop skeleton:
+Inbound channel messages run through a **domain-driven agent loop** with clear separation between domain logic and infrastructure:
 
-- Runtime + loop contracts live in `core/src/main/kotlin/agent/platform/agent/`
-- Infra wiring is in `infra/src/main/kotlin/agent/platform/agent/`
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Application Layer                        │
+│  HandleInboundMessageUseCase (UC-001)                       │
+│  └── Maps InboundMessage → SessionKey                       │
+│  └── Starts AgentRuntime → Delegates to AgentLoop aggregate │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain Layer (Core)                      │
+│  AgentLoop Aggregate                                        │
+│  ├── create(agentId) - Factory method                       │
+│  ├── runTurn(session, message, deps)                        │
+│  │   ├── Adds user message to session                       │
+│  │   ├── Streams LLM completion                             │
+│  │   ├── Validates tool calls via ToolRegistry              │
+│  │   ├── Executes tools and persists results                │
+│  │   └── Emits domain events                                │
+│  └── Enforces: Tool validation, persistence, atomic turns   │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 Infrastructure Layer                        │
+│  DefaultAgentLoop (adapter)                                 │
+│  ├── Resolves provider/model refs                           │
+│  ├── Wires concrete repositories to domain ports            │
+│  └── Maps TurnEvents → AgentEvents                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+**Domain Layer** (`core/src/main/kotlin/agent/platform/agent/domain/`):
+- `AgentLoop.kt` - Core aggregate with `runTurn()` method
+- `AgentLoopDomainEvents.kt` - Domain events (AgentLoopStarted, ToolExecuted, etc.)
+- `DomainEventPublisherPort.kt` - Port for publishing domain events
+
+**Infrastructure Layer** (`infra/src/main/kotlin/agent/platform/agent/`):
+- `DefaultAgentLoop.kt` - Adapter that delegates to domain aggregate
+- `DefaultAgentRuntime.kt` - Runtime lifecycle management
+- `LoggingDomainEventPublisher.kt` - Default domain event logging
+
+**Contracts** (`core/src/main/kotlin/agent/platform/agent/`):
+- `AgentContracts.kt` - Runtime and loop interfaces
+- `AgentEvents.kt` - Event types (AssistantDelta, ToolEvent, etc.)
+- `AgentModels.kt` - RunRequest, RunHandle, RunResult
+
+### Domain Invariants (Enforced by AgentLoop Aggregate)
+
+1. **Tool Validation**: All tool calls are validated through ToolRegistry before execution
+2. **Persistence**: Assistant responses are persisted to SessionRepository atomically
+3. **Atomic Turns**: Each turn is executed atomically per session
+4. **Domain Events**: Significant events are published via DomainEventPublisherPort
+
+### Usage Pattern
+
+```kotlin
+// Create the domain aggregate
+val agentLoop = AgentLoop.create(agentId)
+
+// Prepare dependencies (passed in for purity)
+val deps = AgentLoop.TurnDependencies(
+    sessionRepository = sessionRepo,
+    toolRegistry = toolRegistry,
+    llmProvider = llmProvider,
+    contextBundle = context,
+    eventPublisher = eventPublisher  // optional
+)
+
+// Execute a turn
+agentLoop.runTurn(runId, session, userMessage, deps).collect { event ->
+    when (event) {
+        is TurnEvent.AssistantDelta -> handleAssistantText(event.text)
+        is TurnEvent.ToolStarted -> showToolIndicator(event.toolName)
+        is TurnEvent.ToolCompleted -> displayToolResult(event.result)
+    }
+}
+```
+
+### Dependencies
+
 - LLM routing uses provider/model refs (OpenAI-compatible providers configured under `models.providers`)
-- Tool registry is stubbed (`InMemoryToolRegistry`)
+- Tool registry (`InMemoryToolRegistry`) validates and executes tool calls
+- Session persistence via `SessionFileRepository`
 
 ## Application Layer (DDD Use Cases)
 
