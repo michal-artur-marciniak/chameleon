@@ -22,6 +22,7 @@ class TelegramPlugin(
     private val token: String,
     private val requireMentionInGroups: Boolean = true
 ) : ChannelPort {
+    private val logger = org.slf4j.LoggerFactory.getLogger(TelegramPlugin::class.java)
     override val id: String = "telegram"
 
     private val baseUrl = "https://api.telegram.org/bot$token"
@@ -97,7 +98,7 @@ class TelegramPlugin(
             }
         }.body()
         if (!response.ok) {
-            println("[telegram] getUpdates failed: ${response.errorCode} ${response.description}")
+            logger.warn("[telegram] getUpdates failed: {} {}", response.errorCode, response.description)
             return emptyList()
         }
         return response.result
@@ -106,7 +107,7 @@ class TelegramPlugin(
     private suspend fun fetchBotUsername(): String? {
         val response: GetMeResponse = client.get("$baseUrl/getMe").body()
         if (!response.ok) {
-            println("[telegram] getMe failed: ${response.errorCode} ${response.description}")
+            logger.warn("[telegram] getMe failed: {} {}", response.errorCode, response.description)
             return null
         }
         return response.result?.username
@@ -117,7 +118,7 @@ class TelegramPlugin(
             url { parameters.append("drop_pending_updates", "true") }
         }.body()
         if (!response.ok) {
-            println("[telegram] deleteWebhook failed: ${response.errorCode} ${response.description}")
+            logger.warn("[telegram] deleteWebhook failed: {} {}", response.errorCode, response.description)
         }
     }
 

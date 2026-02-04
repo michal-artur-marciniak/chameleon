@@ -314,10 +314,35 @@ docker compose up -d
 ### Configuration
 
 Configuration is loaded in order of priority:
-1. `config/config.json` (if exists in working directory)
-2. `app/src/main/resources/config.default.json` (bundled fallback)
+1. `--config=/path/to/config.json` (CLI override)
+2. `config/config.json` (if exists in working directory)
+3. `app/src/main/resources/config.default.json` (bundled fallback)
 
 Environment variables are expanded using `${VAR_NAME}` syntax in config files. Missing variables cause startup to fail.
+
+### Logging
+
+Precedence: **CLI args > ENV > config.json > defaults**
+
+**Config keys:**
+- `logging.level`: `trace|debug|info|warn|error`
+- `logging.format`: `plain|json`
+- `logging.debug`: `true|false` (forces `debug` + stacktrace)
+- `logging.stacktrace`: `true|false`
+
+**Env overrides:**
+- `LOG_LEVEL`, `LOG_FORMAT`, `LOG_DEBUG`, `LOG_STACKTRACE`
+
+**CLI overrides:**
+```
+--config=/path/to/config.json
+--log-level=debug
+--log-format=json
+--log-debug=true
+--log-stacktrace=true
+```
+
+**Note:** Unhandled JVM exceptions may still print stack traces to stderr even when `stacktrace=false`.
 
 ### Session Storage
 

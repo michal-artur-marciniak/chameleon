@@ -1,6 +1,7 @@
 package agent.platform.plugins
 
 import agent.platform.config.PlatformConfig
+import agent.platform.logging.LogWrapper
 import agent.platform.persistence.SessionFileRepository
 import agent.platform.session.Message
 import agent.platform.session.MessageRole
@@ -28,6 +29,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -41,6 +43,8 @@ class PluginService(
     private val config: PlatformConfig,
     private val configPath: Path?
 ) {
+    private val logger = LoggerFactory.getLogger(PluginService::class.java)
+    private val stacktrace = config.logging.stacktrace
     private val extensionsDir: Path = Paths.get(config.agents.defaults.extensionsDir)
     private val workspace = Paths.get(config.agents.defaults.workspace)
     private val sessionRepository = SessionFileRepository(workspace)
@@ -57,11 +61,11 @@ class PluginService(
 
     fun startAll() {
         // Load all plugins through the domain
-        println("[plugin] external dir=$extensionsDir")
+        logger.info("plugin external dir={}", extensionsDir)
         val plugins = pluginManager.loadAll()
 
         if (plugins.isEmpty()) {
-            println("[app] no plugins loaded")
+            logger.warn("[app] no plugins loaded")
             return
         }
 
@@ -73,7 +77,7 @@ class PluginService(
     
     fun stopAll() {
         runningPlugins.forEach { (id, scope) ->
-            println("[${id.value}] stopping")
+            logger.info("[{}] stopping", id.value)
             // Cancel the scope
             // Note: ChannelPort.stop() should be called for clean shutdown
         }
@@ -111,14 +115,14 @@ class PluginService(
         val plugin = pluginManager.get(id) ?: return
         
         val handler = CoroutineExceptionHandler { _, throwable ->
-            println("[${id.value}] coroutine error: ${throwable.message}")
+            LogWrapper.error(logger, "[${id.value}] coroutine error", throwable, stacktrace)
         }
         
         val scope = CoroutineScope(Dispatchers.IO + handler)
         runningPlugins[id] = scope
         
         scope.launch {
-            println("[${id.value}] starting")
+            logger.info("[{}] starting", id.value)
             plugin.instance.start { inbound ->
                 handleInboundMessage(plugin.instance, inbound)
             }
@@ -137,9 +141,13 @@ class PluginService(
             Message(role = MessageRole.USER, content = inbound.text)
         )
         
-        println(
-            "[${plugin.id}] message chat=${inbound.chatId} user=${inbound.userId} " +
-                "group=${inbound.isGroup} mentioned=${inbound.isMentioned}"
+        logger.info(
+            "[{}] message chat={} user={} group={} mentioned={}",
+            plugin.id,
+            inbound.chatId,
+            inbound.userId,
+            inbound.isGroup,
+            inbound.isMentioned
         )
         
         // Echo for now - replace with actual agent routing
@@ -150,7 +158,7 @@ class PluginService(
                 text = inbound.text
             )
         ).onFailure { error ->
-            println("[${plugin.id}] send failed: ${error.message}")
+            LogWrapper.error(logger, "[${plugin.id}] send failed", error, stacktrace)
         }
     }
     
@@ -170,19 +178,29 @@ class PluginService(
         override fun onEvent(event: PluginEvent) {
             when (event) {
                 is PluginDiscovered -> 
-                    println("[plugin] discovered: ${event.pluginId} v${event.version} (${event.source.name.lowercase()})")
+                    logger.info(
+                        "[plugin] discovered: {} v{} ({})",
+                        event.pluginId,
+                        event.version,
+                        event.source.name.lowercase()
+                    )
                 is PluginLoaded -> 
-                    println("[plugin] loaded: ${event.pluginId} v${event.version} (${event.source.name.lowercase()})")
+                    logger.info(
+                        "[plugin] loaded: {} v{} ({})",
+                        event.pluginId,
+                        event.version,
+                        event.source.name.lowercase()
+                    )
                 is PluginEnabled -> 
-                    println("[plugin] enabled: ${event.pluginId}")
+                    logger.info("[plugin] enabled: {}", event.pluginId)
                 is PluginDisabled -> 
-                    println("[plugin] disabled: ${event.pluginId}")
+                    logger.info("[plugin] disabled: {}", event.pluginId)
                 is PluginReloaded -> 
-                    println("[plugin] reloaded: ${event.pluginId}")
+                    logger.info("[plugin] reloaded: {}", event.pluginId)
                 is PluginError -> 
-                    println("[plugin] error: ${event.pluginId} - ${event.message}")
+                    logger.error("[plugin] error: {} - {}", event.pluginId, event.message)
                 is PluginSkipped -> 
-                    println("[plugin] skipped: ${event.pluginId} - ${event.reason}")
+                    logger.info("[plugin] skipped: {} - {}", event.pluginId, event.reason)
             }
         }
     }

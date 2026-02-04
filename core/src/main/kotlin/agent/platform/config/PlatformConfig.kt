@@ -14,6 +14,7 @@ data class PlatformConfig(
     val agents: AgentsConfig = AgentsConfig(),
     val messages: MessagesConfig = MessagesConfig(),
     val tools: ToolsConfig = ToolsConfig(),
+    val logging: LoggingConfig = LoggingConfig(),
     val channels: ChannelsConfig = ChannelsConfig(),
     val gateway: GatewayConfig = GatewayConfig()
 )

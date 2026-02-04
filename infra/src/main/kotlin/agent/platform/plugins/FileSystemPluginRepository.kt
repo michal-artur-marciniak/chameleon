@@ -8,6 +8,8 @@ import agent.sdk.PluginManifest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import agent.platform.logging.LogWrapper
+import org.slf4j.LoggerFactory
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,10 +27,12 @@ class FileSystemPluginRepository(
     private val extensionsDir: Path,
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) : PluginRepository {
+    private val logger = LoggerFactory.getLogger(FileSystemPluginRepository::class.java)
+    private val stacktrace = System.getProperty("LOG_STACKTRACE")?.toBoolean() == true
     
     override fun discover(): List<PluginManifest> {
         if (!Files.exists(extensionsDir) || !Files.isDirectory(extensionsDir)) {
-            println("[plugin-repository] extensions dir missing: $extensionsDir")
+            logger.info("[plugin-repository] extensions dir missing: {}", extensionsDir)
             return emptyList()
         }
         
@@ -41,12 +45,14 @@ class FileSystemPluginRepository(
                     val jarPath = pluginDir.resolve("plugin.jar")
                     
                     if (Files.exists(manifestPath) && Files.exists(jarPath)) {
-                        println("[plugin-repository] discovered: ${pluginDir.fileName}")
+                        logger.info("[plugin-repository] discovered: {}", pluginDir.fileName)
                         loadManifest(manifestPath)?.let { manifests.add(it) }
                     } else {
-                        println(
-                            "[plugin-repository] skipping ${pluginDir.fileName}: " +
-                                "manifest=${Files.exists(manifestPath)} jar=${Files.exists(jarPath)}"
+                        logger.info(
+                            "[plugin-repository] skipping {}: manifest={} jar={}",
+                            pluginDir.fileName,
+                            Files.exists(manifestPath),
+                            Files.exists(jarPath)
                         )
                     }
                 }
@@ -60,7 +66,7 @@ class FileSystemPluginRepository(
         val jarPath = pluginDir.resolve("plugin.jar")
         
         if (!Files.exists(jarPath)) {
-            println("[plugin-repository] JAR not found: $jarPath")
+            logger.warn("[plugin-repository] JAR not found: {}", jarPath)
             return null
         }
         
@@ -83,7 +89,12 @@ class FileSystemPluginRepository(
                 Files.readString(path)
             )
         } catch (e: Exception) {
-            println("[plugin-repository] failed to parse manifest: $path - ${e.message}")
+            LogWrapper.warn(
+                logger,
+                "[plugin-repository] failed to parse manifest: $path",
+                e,
+                stacktrace
+            )
             null
         }
     }
@@ -130,19 +141,27 @@ class FileSystemPluginRepository(
             }
             
             if (instance !is ChannelPort) {
-                println("[plugin-repository] class does not implement ChannelPort: ${manifest.entryPoint}")
+                logger.warn("[plugin-repository] class does not implement ChannelPort: {}", manifest.entryPoint)
                 return null
             }
             
             if (instance.id != manifest.id) {
-                println("[plugin-repository] warning: ID mismatch. Manifest: ${manifest.id}, Instance: ${instance.id}")
+                logger.warn(
+                    "[plugin-repository] warning: ID mismatch. Manifest: {}, Instance: {}",
+                    manifest.id,
+                    instance.id
+                )
             }
             
             instance
             
         } catch (e: Exception) {
-            println("[plugin-repository] failed to instantiate plugin ${manifest.id}: ${e.message}")
-            e.printStackTrace()
+            LogWrapper.error(
+                logger,
+                "[plugin-repository] failed to instantiate plugin ${manifest.id}",
+                e,
+                stacktrace
+            )
             null
         }
     }

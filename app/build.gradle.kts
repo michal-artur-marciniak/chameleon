@@ -15,6 +15,10 @@ dependencies {
     implementation("io.ktor:ktor-server-websockets-jvm:${property("ktorVersion")}")
     implementation("io.ktor:ktor-server-call-logging-jvm:${property("ktorVersion")}")
 
+    implementation("org.slf4j:slf4j-api:2.0.12")
+    implementation("ch.qos.logback:logback-classic:${property("logbackVersion")}")
+    implementation("net.logstash.logback:logstash-logback-encoder:${property("logstashLogbackEncoderVersion")}")
+
     implementation("io.insert-koin:koin-core:3.5.6")
     implementation("io.insert-koin:koin-ktor:3.5.6")
 
