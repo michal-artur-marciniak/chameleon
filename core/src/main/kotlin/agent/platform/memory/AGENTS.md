@@ -119,19 +119,13 @@ MemoryConfig(
 
 ## Integration with AgentLoop
 
-Memory search is integrated into AgentLoop via `MemorySearchService`:
+Memory search is composed in the application layer. The domain aggregate stays pure;
+memory context is injected when building the LLM request:
 
 ```kotlin
-val deps = AgentLoop.TurnDependencies(
-    sessionRepository = sessionRepo,
-    toolRegistry = toolRegistry,
-    llmProvider = llmProvider,
-    contextBundle = contextBundle,
-    memorySearchService = memorySearchService  // Optional
-)
+val memoryContext = memoryContextAssembler.buildContext(context.messages)
+val requestPlan = llmRequestBuilder.build(context, modelId, memoryContext)
 ```
-
-When available, memory context is prepended to the system prompt.
 
 ## Testing
 

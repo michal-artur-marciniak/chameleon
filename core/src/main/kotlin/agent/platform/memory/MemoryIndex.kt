@@ -1,5 +1,6 @@
 package agent.platform.memory
 
+import agent.platform.memory.ports.MemoryIndexRepositoryPort
 import java.io.File
 
 /**

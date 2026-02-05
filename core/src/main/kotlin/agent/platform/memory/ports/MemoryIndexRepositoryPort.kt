@@ -1,8 +1,13 @@
-package agent.platform.memory
+package agent.platform.memory.ports
+
+import agent.platform.memory.MemoryChunk
+import agent.platform.memory.MemoryIndexStatus
+import agent.platform.memory.MemorySearchQuery
+import agent.platform.memory.MemorySearchResult
 
 /**
  * Port for memory index repository operations.
- * 
+ *
  * The repository is responsible for:
  * - Storing memory chunks with full-text search capability
  * - Searching indexed content
@@ -12,7 +17,7 @@ interface MemoryIndexRepositoryPort {
     /**
      * Indexes a list of memory chunks.
      * Chunks with existing IDs are updated (upsert behavior).
-     * 
+     *
      * @param chunks The chunks to index
      * @return Number of chunks indexed
      */
@@ -20,7 +25,7 @@ interface MemoryIndexRepositoryPort {
 
     /**
      * Searches the memory index for chunks matching the query.
-     * 
+     *
      * @param query The search query
      * @return List of search results ordered by relevance
      */
@@ -33,14 +38,14 @@ interface MemoryIndexRepositoryPort {
 
     /**
      * Clears all indexed chunks.
-     * 
+     *
      * @return Number of chunks removed
      */
     fun clear(): Int
 
     /**
      * Removes all chunks for a specific file.
-     * 
+     *
      * @param filePath The file path to remove
      * @return Number of chunks removed
      */
@@ -48,7 +53,7 @@ interface MemoryIndexRepositoryPort {
 
     /**
      * Gets all chunks for a specific file.
-     * 
+     *
      * @param filePath The file path
      * @return List of chunks for that file
      */
@@ -56,7 +61,7 @@ interface MemoryIndexRepositoryPort {
 
     /**
      * Checks if a file has been indexed.
-     * 
+     *
      * @param filePath The file path
      * @return true if the file has any chunks in the index
      */
