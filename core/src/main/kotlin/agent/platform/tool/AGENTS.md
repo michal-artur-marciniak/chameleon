@@ -28,16 +28,15 @@ when (decision) {
 - Exec tool has additional security modes: DENY, ALLOWLIST, FULL
 
 **3. Registry Integration**
-`InMemoryToolRegistry` enforces policies automatically:
+Tool adapters implement definition lookup, policy evaluation, and execution:
 ```kotlin
-val registry = InMemoryToolRegistry(
-    tools = toolDefinitions,
-    policyService = policyService,
-    onDomainEvent = { event -> publish(event) }
-)
+val definitions = InMemoryToolDefinitionRegistry(toolDefinitions)
+val policy = ToolPolicyEvaluatorAdapter(definitions, policyService)
+val executor = ToolExecutorAdapter(definitions) { event -> publish(event) }
 
-// Policy is checked automatically on execute()
-val result = registry.execute(toolCall)
+// Policy is checked before execution
+val decision = policy.validatePolicy(toolCall)
+val result = executor.execute(toolCall)
 ```
 
 ## Configuration
@@ -73,16 +72,18 @@ Tool operations emit domain events:
 
 ## File Organization
 
-- `ToolRegistry.kt` - Port interface for tool registry
+- `ToolRegistry.kt` - Ports (definition, policy, execution)
 - `ToolPolicyService.kt` - Domain service for policy evaluation
 - `ToolDomainEvents.kt` - Domain events for tool operations
 - `ToolsConfig.kt` - Configuration data classes
-- `InMemoryToolRegistry.kt` - Infrastructure adapter (in infra module)
+- `InMemoryToolDefinitionRegistry.kt` - Infra adapter for tool definitions
+- `ToolPolicyEvaluatorAdapter.kt` - Infra adapter for policy checks
+- `ToolExecutorAdapter.kt` - Infra adapter for execution
 
 ## When Modifying Tool Module
 
 1. Policy evaluation belongs in `ToolPolicyService` (domain layer)
-2. Policy enforcement belongs in `InMemoryToolRegistry` (infra layer)
+2. Policy enforcement belongs in `ToolPolicyEvaluatorAdapter` (infra layer)
 3. Always emit `ToolPolicyViolation` events for deny/ask decisions
 4. Update `ToolsConfig` if adding new policy options
 5. Test policy edge cases in `ToolPolicyServiceTest.kt`
