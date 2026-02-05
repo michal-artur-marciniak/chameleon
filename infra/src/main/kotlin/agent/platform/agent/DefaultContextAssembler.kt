@@ -4,7 +4,7 @@ import agent.platform.config.PlatformConfig
 import agent.platform.session.Message
 import agent.platform.session.MessageRole
 import agent.platform.session.Session
-import agent.platform.tool.ToolRegistry
+import agent.platform.tool.ToolDefinitionRegistry
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.ZoneId
@@ -24,7 +24,7 @@ class DefaultContextAssembler(
         "BOOTSTRAP.md"
     )
 
-    override fun build(session: Session, tools: ToolRegistry): ContextBundle {
+    override fun build(session: Session, tools: ToolDefinitionRegistry): ContextBundle {
         val injected = mutableListOf<InjectedFileReport>()
         val projectContext = StringBuilder()
 

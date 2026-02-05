@@ -1,7 +1,7 @@
 package agent.platform.agent
 
 import agent.platform.agent.domain.AgentLoopDomainEvent
-import agent.platform.agent.domain.DomainEventPublisherPort
+import agent.platform.agent.ports.DomainEventPublisherPort
 import org.slf4j.LoggerFactory
 
 /**
