@@ -214,7 +214,7 @@ class AgentLoop private constructor(
     }
 
     /**
-     * Executes a tool call with validation.
+     * Executes a tool call with validation and policy enforcement.
      * Tool validation happens before execution via the ToolRegistry.
      */
     private suspend fun executeTool(
@@ -222,13 +222,34 @@ class AgentLoop private constructor(
         toolRegistry: ToolRegistry
     ): ToolResult {
         // Validate: Tool must exist in registry
-        val toolDef = toolRegistry.get(call.name)
-            ?: return ToolResult(
+        if (!toolRegistry.isRegistered(call.name)) {
+            return ToolResult(
                 content = "Error: Tool '${call.name}' not found in registry",
                 isError = true
             )
+        }
 
-        // Execute via registry (registry handles the actual execution)
+        // Validate: Check policy before execution (allows early detection)
+        val policyDecision = toolRegistry.validatePolicy(call)
+        when (policyDecision) {
+            is agent.platform.tool.ToolPolicyService.PolicyDecision.Deny -> {
+                return ToolResult(
+                    content = "Error: ${policyDecision.reason}",
+                    isError = true
+                )
+            }
+            is agent.platform.tool.ToolPolicyService.PolicyDecision.Ask -> {
+                return ToolResult(
+                    content = "Approval required: ${policyDecision.reason}",
+                    isError = true
+                )
+            }
+            is agent.platform.tool.ToolPolicyService.PolicyDecision.Allow -> {
+                // Continue to execution
+            }
+        }
+
+        // Execute via registry (registry handles the actual execution with policy enforcement)
         return try {
             toolRegistry.execute(call)
         } catch (e: Exception) {
