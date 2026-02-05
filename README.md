@@ -6,7 +6,7 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 
 - `app` - application entrypoint, server
 - `core` - domain layer (pure Kotlin)
-- `infra` - infrastructure adapters (config loader, persistence)
+- `infra` - infrastructure adapters (config loader, persistence, memory index)
 - `sdk` - plugin SDK interfaces
 - `plugins/telegram` - built-in Telegram channel plugin
 - `extensions/` - external plugin drop-ins (created at runtime)
@@ -192,6 +192,104 @@ ToolsConfig(
 2. **Unknown tools require approval** - Follows ask mode configuration
 3. **Exec tool special handling** - Additional security layers beyond basic policy
 4. **Domain events emitted** - `ToolPolicyViolation` events for deny/ask decisions
+
+## Memory Index (DDD Supporting Domain)
+
+Long-term memory is managed through a **supporting domain aggregate** that provides hybrid search capabilities over indexed files:
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain Layer (Core)                      │
+│  MemoryIndex Aggregate                                      │
+│  ├── create(config, repository) - Factory method            │
+│  ├── indexFile(file)                                        │
+│  │   ├── Chunks file with configurable overlap              │
+│  │   ├── Generates content-addressed chunk IDs              │
+│  │   └── Emits FileIndexed domain event                     │
+│  ├── search(query)                                          │
+│  │   ├── Delegates to repository                            │
+│  │   └── Emits MemorySearchPerformed event                  │
+│  └── clear() / removeFile()                                 │
+└─────────────────────────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 Infrastructure Layer                        │
+│  SqliteMemoryIndexAdapter                                   │
+│  ├── Implements MemoryIndexRepositoryPort                   │
+│  ├── SQLite FTS5 virtual table for full-text search         │
+│  ├── Triggers keep FTS index synchronized                   │
+│  └── Content-addressed chunk storage                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Features
+
+**Content-Addressed Chunking**
+- Files are split into chunks with configurable size and overlap
+- Chunk IDs generated from content hash (idempotent indexing)
+- Supports: Markdown, code files, configs (configurable extensions)
+
+**Full-Text Search (FTS5)**
+- SQLite FTS5 virtual table for efficient text search
+- Prefix matching support (`term*`)
+- Rank-based relevance scoring
+- File path filtering
+
+**Domain Events**
+- `FileIndexed` - Emitted when a file is indexed
+- `MemorySearchPerformed` - Emitted when search executes
+- `IndexCleared` - Emitted when index is cleared
+- `FileRemovedFromIndex` - Emitted when file is removed
+
+### Configuration
+
+```kotlin
+MemoryConfig(
+    chunkSizeLines = 50,          // Lines per chunk
+    chunkOverlapLines = 5,        // Overlap between chunks
+    maxChunksPerFile = 1000,      // Safety limit per file
+    defaultMaxSearchResults = 10, // Default result limit
+    minSearchRelevanceScore = 0.0 // Minimum relevance threshold
+)
+```
+
+### Key Files
+
+**Domain Layer** (`core/src/main/kotlin/agent/platform/memory/`):
+- `MemoryIndex.kt` - Core aggregate with indexing logic
+- `MemoryChunk.kt` - Value objects (chunks, search results, queries)
+- `MemorySearchService.kt` - Domain service for context search
+- `MemoryDomainEvents.kt` - Domain events
+- `MemoryIndexRepositoryPort.kt` - Repository port interface
+
+**Infrastructure Layer** (`infra/src/main/kotlin/agent/platform/memory/`):
+- `SqliteMemoryIndexAdapter.kt` - SQLite FTS5 implementation
+
+### Invariants
+
+1. **Chunk IDs are content-addressed** - Same content = same ID (idempotent)
+2. **Index is rebuildable from source files** - Chunks can be recreated
+3. **FTS index stays synchronized** - Database triggers maintain consistency
+4. **Files are chunked with overlap** - Configurable overlap prevents context loss
+
+### Integration with AgentLoop
+
+Memory search is integrated into agent turns via `TurnDependencies`:
+
+```kotlin
+val deps = AgentLoop.TurnDependencies(
+    sessionRepository = sessionRepo,
+    toolRegistry = toolRegistry,
+    llmProvider = llmProvider,
+    contextBundle = contextBundle,
+    eventPublisher = eventPublisher,
+    memorySearchService = memorySearchService  // Optional
+)
+```
+
+When available, memory context is automatically searched and prepended to the system prompt for relevant context.
 
 ## Application Layer (DDD Use Cases)
 
