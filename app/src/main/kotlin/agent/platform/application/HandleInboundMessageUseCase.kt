@@ -5,9 +5,6 @@ import agent.platform.agent.AgentRunHandle
 import agent.platform.agent.AgentRunRequest
 import agent.platform.agent.AgentRuntime
 import agent.platform.agent.Phase
-import agent.platform.agent.RunId
-import agent.platform.agent.domain.AgentLoopDomainEvent
-import agent.platform.agent.domain.DomainEventPublisherPort
 import agent.platform.session.SessionKey
 import agent.sdk.ChannelPort
 import agent.sdk.InboundMessage
@@ -31,8 +28,7 @@ import org.slf4j.LoggerFactory
  * keeping channel adapters thin and pushing orchestration to the application layer.
  */
 class HandleInboundMessageUseCase(
-    private val agentRuntime: AgentRuntime,
-    private val eventPublisher: DomainEventPublisherPort? = null
+    private val agentRuntime: AgentRuntime
 ) {
     private val logger = LoggerFactory.getLogger(HandleInboundMessageUseCase::class.java)
     
@@ -73,8 +69,6 @@ class HandleInboundMessageUseCase(
         
         // 3. Stream lifecycle + assistant events
         handle.events.collect { event ->
-            // Publish domain events if publisher is available
-            publishDomainEvent(event, handle.runId, sessionKey)
             emit(event)
         }
         
@@ -153,68 +147,4 @@ class HandleInboundMessageUseCase(
         )
     }
     
-    /**
-     * Publishes domain events based on AgentEvents.
-     */
-    private fun publishDomainEvent(
-        event: AgentEvent,
-        runId: RunId,
-        sessionKey: SessionKey
-    ) {
-        eventPublisher?.let { publisher ->
-            when (event) {
-                is AgentEvent.Lifecycle -> {
-                    when (event.phase) {
-                        Phase.START -> publisher.publish(
-                            AgentLoopDomainEvent.AgentLoopStarted(
-                                runId = event.runId,
-                                sessionId = agent.platform.session.SessionId(runId.value),
-                                agentId = sessionKey.agentId,
-                                sessionKey = sessionKey
-                            )
-                        )
-                        Phase.END -> publisher.publish(
-                            AgentLoopDomainEvent.AgentLoopCompleted(
-                                runId = event.runId,
-                                sessionId = agent.platform.session.SessionId(runId.value),
-                                success = true
-                            )
-                        )
-                        Phase.ERROR -> publisher.publish(
-                            AgentLoopDomainEvent.AgentLoopCompleted(
-                                runId = event.runId,
-                                sessionId = agent.platform.session.SessionId(runId.value),
-                                success = false,
-                                error = event.error
-                            )
-                        )
-                    }
-                }
-                is AgentEvent.ToolEvent -> {
-                    when (event.phase) {
-                        agent.platform.agent.ToolPhase.START -> publisher.publish(
-                            AgentLoopDomainEvent.ToolCallInitiated(
-                                runId = event.runId,
-                                toolName = event.tool,
-                                toolCallId = "",
-                                argumentsJson = ""
-                            )
-                        )
-                        agent.platform.agent.ToolPhase.END -> publisher.publish(
-                            AgentLoopDomainEvent.ToolExecuted(
-                                runId = event.runId,
-                                toolName = event.tool,
-                                toolCallId = "",
-                                success = true,
-                                durationMs = 0,
-                                resultSummary = event.payload ?: ""
-                            )
-                        )
-                        else -> Unit
-                    }
-                }
-                else -> Unit
-            }
-        }
-    }
 }

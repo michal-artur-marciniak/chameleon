@@ -4,7 +4,6 @@ import agent.platform.application.HandleInboundMessageUseCase
 import agent.platform.config.PlatformConfig
 import agent.platform.logging.LogWrapper
 import agent.platform.agent.AgentRuntimeFactory
-import agent.platform.agent.domain.DomainEventPublisherPort
 import agent.platform.plugins.domain.PluginEvent
 import agent.platform.plugins.domain.PluginEventListener
 import agent.platform.plugins.domain.PluginId
@@ -36,9 +35,7 @@ import java.nio.file.Paths
  * to handle plugin lifecycle and coordinates with other contexts.
  */
 class PluginService(
-    private val config: PlatformConfig,
-    private val configPath: Path?,
-    private val eventPublisher: DomainEventPublisherPort? = null
+    private val config: PlatformConfig
 ) {
     private val logger = LoggerFactory.getLogger(PluginService::class.java)
     private val stacktrace = config.logging.stacktrace
@@ -47,7 +44,7 @@ class PluginService(
     private val pluginManager: PluginManager
     private val runningPlugins = mutableMapOf<PluginId, CoroutineScope>()
     private val agentRuntime = AgentRuntimeFactory.create(config)
-    private val handleInboundMessageUseCase = HandleInboundMessageUseCase(agentRuntime, eventPublisher)
+    private val handleInboundMessageUseCase = HandleInboundMessageUseCase(agentRuntime)
     
     init {
         val officialRegistry = OfficialPluginRegistry()
