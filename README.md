@@ -40,49 +40,62 @@ Sessions manage conversation history and enforce compaction rules as a domain ag
 
 ## Agent Loop (DDD Core Domain)
 
-Inbound channel messages run through a **domain-driven agent loop** with clear separation between domain logic and infrastructure:
+Inbound channel messages run through a layered agent pipeline that keeps domain logic pure and pushes orchestration into the application layer.
 
 ### Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                        │
+│                    Application Layer (app)                  │
 │  HandleInboundMessageUseCase (UC-001)                       │
 │  └── Maps InboundMessage → SessionKey                       │
-│  └── Starts AgentRuntime → Delegates to AgentLoop aggregate │
+│  └── Starts AgentRuntime                                    │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    Domain Layer (Core)                      │
+│                 Infrastructure Layer (infra)                │
+│  DefaultAgentLoop (adapter)                                 │
+│  └── Delegates to AgentTurnService                           │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                Application Layer (core)                     │
+│  AgentTurnService                                           │
+│  ├── Session lock + persistence                             │
+│  ├── LLM request building (LlmRequestBuilder)               │
+│  ├── Tool execution + policy enforcement                    │
+│  └── Domain event publishing                                │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain Layer (core)                      │
 │  AgentLoop Aggregate                                        │
 │  ├── create(agentId) - Factory method                       │
-│  ├── runTurn(session, message, deps)                        │
-│  │   ├── Adds user message to session                       │
-│  │   ├── Streams LLM completion                             │
-│  │   ├── Validates tool calls via ToolRegistry              │
-│  │   ├── Executes tools and persists results                │
-│  │   └── Emits domain events                                │
-│  └── Enforces: Tool validation, persistence, atomic turns   │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                 Infrastructure Layer                        │
-│  DefaultAgentLoop (adapter)                                 │
-│  ├── Resolves provider/model refs                           │
-│  ├── Wires concrete repositories to domain ports            │
-│  └── Maps TurnEvents → AgentEvents                          │
+│  ├── processCompletion(events, deps)                        │
+│  │   ├── Validates tool calls via ToolDefinitionRegistry    │
+│  │   ├── Aggregates assistant output                        │
+│  │   └── Emits TurnEvents + TurnPlan                         │
+│  └── Enforces: tool-call validation, turn planning          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Files
 
 **Domain Layer** (`core/src/main/kotlin/agent/platform/agent/domain/`):
-- `AgentLoop.kt` - Core aggregate with `runTurn()` method
+- `AgentLoop.kt` - Core aggregate with `processCompletion()`
 - `AgentLoopDomainEvents.kt` - Domain events (AgentLoopStarted, ToolExecuted, etc.)
-- `DomainEventPublisherPort.kt` - Port for publishing domain events
+- `core/src/main/kotlin/agent/platform/agent/ports/DomainEventPublisherPort.kt` - Port for publishing domain events
+
+**Application Layer (core)** (`core/src/main/kotlin/agent/platform/application/`):
+- `AgentRunService.kt` - Orchestrates run flow
+- `AgentTurnService.kt` - Orchestrates turns, persistence, and tool execution
+- `SessionAppService.kt` - Compaction orchestration
+- `ToolExecutionService.kt` - Policy + execution facade
+- `application/llm/LlmRequestBuilder.kt` - LLM request ACL for prompt construction
+- `application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
 
 **Infrastructure Layer** (`infra/src/main/kotlin/agent/platform/agent/`):
-- `DefaultAgentLoop.kt` - Adapter that delegates to domain aggregate
+- `DefaultAgentLoop.kt` - Adapter delegating to AgentRunService
 - `DefaultAgentRuntime.kt` - Runtime lifecycle management
 - `LoggingDomainEventPublisher.kt` - Default domain event logging
 
@@ -93,40 +106,29 @@ Inbound channel messages run through a **domain-driven agent loop** with clear s
 
 ### Domain Invariants (Enforced by AgentLoop Aggregate)
 
-1. **Tool Validation**: All tool calls are validated through ToolRegistry before execution
-2. **Persistence**: Assistant responses are persisted to SessionRepository atomically
-3. **Atomic Turns**: Each turn is executed atomically per session
-4. **Domain Events**: Significant events are published via DomainEventPublisherPort
+1. **Tool Validation**: Tool calls from the completion stream must exist in ToolDefinitionRegistry
+2. **Turn Planning**: The turn produces a complete plan (assistant text + tool calls)
+3. **Pure Domain Logic**: No persistence, external calls, or tool execution inside the aggregate
 
-### Usage Pattern
+### Usage Pattern (Domain)
 
 ```kotlin
-// Create the domain aggregate
 val agentLoop = AgentLoop.create(agentId)
+val deps = AgentLoop.TurnDependencies(toolRegistry = toolDefinitionRegistry)
 
-// Prepare dependencies (passed in for purity)
-val deps = AgentLoop.TurnDependencies(
-    sessionRepository = sessionRepo,
-    toolRegistry = toolRegistry,
-    llmProvider = llmProvider,
-    contextBundle = context,
-    eventPublisher = eventPublisher  // optional
-)
-
-// Execute a turn
-agentLoop.runTurn(runId, session, userMessage, deps).collect { event ->
+agentLoop.processCompletion(runId, llmProvider.stream(request), deps).collect { event ->
     when (event) {
         is TurnEvent.AssistantDelta -> handleAssistantText(event.text)
-        is TurnEvent.ToolStarted -> showToolIndicator(event.toolName)
-        is TurnEvent.ToolCompleted -> displayToolResult(event.result)
+        is TurnEvent.TurnCompleted -> executePlan(event.plan)
     }
 }
 ```
 
 ### Dependencies
 
-- LLM routing uses provider/model refs (OpenAI-compatible providers configured under `models.providers`), resolved via the core `ModelRefResolver`
-- Tool registry (`InMemoryToolRegistry`) validates and executes tool calls
+- LLM routing uses provider/model refs resolved via `ModelRefResolver`
+- Prompt assembly uses `LlmRequestBuilder` + `MemoryContextAssembler` in the core application layer
+- Tool adapters provide definition lookup, policy checks, and execution
 - Session persistence via `SessionFileRepository`
 
 ## Tool Policy Enforcement (DDD Core Domain)
@@ -152,7 +154,7 @@ Tool execution is governed by a **domain service** that enforces allow/deny/ask 
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                 Infrastructure Layer                        │
-│  InMemoryToolRegistry (adapter)                             │
+│  ToolDefinitionRegistry / ToolPolicyEvaluator / Executor    │
 │  ├── validatePolicy(call) → PolicyDecision                  │
 │  ├── execute(call) with policy enforcement                  │
 │  └── Emits ToolPolicyViolation domain events                │
@@ -183,8 +185,10 @@ ToolsConfig(
 
 - `core/src/main/kotlin/agent/platform/tool/ToolPolicyService.kt` - Domain service
 - `core/src/main/kotlin/agent/platform/tool/ToolDomainEvents.kt` - Domain events
-- `core/src/main/kotlin/agent/platform/tool/ToolRegistry.kt` - Port interface
-- `infra/src/main/kotlin/agent/platform/tool/InMemoryToolRegistry.kt` - Policy enforcement adapter
+- `core/src/main/kotlin/agent/platform/tool/ToolRegistry.kt` - Ports (definition, policy, execution)
+- `infra/src/main/kotlin/agent/platform/tool/InMemoryToolDefinitionRegistry.kt` - Definitions adapter
+- `infra/src/main/kotlin/agent/platform/tool/ToolPolicyEvaluatorAdapter.kt` - Policy adapter
+- `infra/src/main/kotlin/agent/platform/tool/ToolExecutorAdapter.kt` - Executor adapter
 
 ### Invariants
 
@@ -217,7 +221,7 @@ Long-term memory is managed through a **supporting domain aggregate** that provi
 ┌─────────────────────────────────────────────────────────────┐
 │                 Infrastructure Layer                        │
 │  SqliteMemoryIndexAdapter                                   │
-│  ├── Implements MemoryIndexRepositoryPort                   │
+│  ├── Implements MemoryIndexRepositoryPort (ports/)          │
 │  ├── SQLite FTS5 virtual table for full-text search         │
 │  ├── Triggers keep FTS index synchronized                   │
 │  └── Content-addressed chunk storage                        │
@@ -260,9 +264,12 @@ MemoryConfig(
 **Domain Layer** (`core/src/main/kotlin/agent/platform/memory/`):
 - `MemoryIndex.kt` - Core aggregate with indexing logic
 - `MemoryChunk.kt` - Value objects (chunks, search results, queries)
-- `MemorySearchService.kt` - Domain service for context search
+- `MemorySearchService.kt` - Domain service for search operations
 - `MemoryDomainEvents.kt` - Domain events
-- `MemoryIndexRepositoryPort.kt` - Repository port interface
+- `core/src/main/kotlin/agent/platform/memory/ports/MemoryIndexRepositoryPort.kt` - Repository port interface
+
+**Application Layer (core)**:
+- `core/src/main/kotlin/agent/platform/application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
 
 **Infrastructure Layer** (`infra/src/main/kotlin/agent/platform/memory/`):
 - `SqliteMemoryIndexAdapter.kt` - SQLite FTS5 implementation
@@ -274,22 +281,9 @@ MemoryConfig(
 3. **FTS index stays synchronized** - Database triggers maintain consistency
 4. **Files are chunked with overlap** - Configurable overlap prevents context loss
 
-### Integration with AgentLoop
+### Integration with Agent Loop
 
-Memory search is integrated into agent turns via `TurnDependencies`:
-
-```kotlin
-val deps = AgentLoop.TurnDependencies(
-    sessionRepository = sessionRepo,
-    toolRegistry = toolRegistry,
-    llmProvider = llmProvider,
-    contextBundle = contextBundle,
-    eventPublisher = eventPublisher,
-    memorySearchService = memorySearchService  // Optional
-)
-```
-
-When available, memory context is automatically searched and prepended to the system prompt for relevant context.
+Memory search is composed in the application layer. The domain aggregate stays pure; any memory context is injected when building the LLM request in the application service.
 
 ## Application Layer (DDD Use Cases)
 
@@ -298,10 +292,9 @@ The application layer implements use cases that orchestrate domain objects:
 Located in `app/src/main/kotlin/agent/platform/application/`:
 
 - **`HandleInboundMessageUseCase`** (UC-001) - Routes channel messages through DDD agent runtime
-  - Maps `InboundMessage` to `SessionKey` 
+  - Maps `InboundMessage` to `SessionKey`
   - Starts agent runs via `AgentRuntime`
   - Streams lifecycle events (START, END, ERROR)
-  - Publishes domain events via `DomainEventPublisherPort`
 
 **Domain Events** (in `core/src/main/kotlin/agent/platform/agent/domain/`):
 - `AgentLoopStarted` - Run initiated
@@ -313,7 +306,7 @@ Located in `app/src/main/kotlin/agent/platform/application/`:
 **Usage Pattern**:
 ```kotlin
 // In PluginService or channel adapters
-val useCase = HandleInboundMessageUseCase(agentRuntime, eventPublisher)
+val useCase = HandleInboundMessageUseCase(agentRuntime)
 useCase.executeAndRespond(channel, inboundMessage, agentId)
 ```
 
