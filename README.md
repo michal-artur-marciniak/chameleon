@@ -125,7 +125,7 @@ agentLoop.runTurn(runId, session, userMessage, deps).collect { event ->
 
 ### Dependencies
 
-- LLM routing uses provider/model refs (OpenAI-compatible providers configured under `models.providers`)
+- LLM routing uses provider/model refs (OpenAI-compatible providers configured under `models.providers`), resolved via the core `ModelRefResolver`
 - Tool registry (`InMemoryToolRegistry`) validates and executes tool calls
 - Session persistence via `SessionFileRepository`
 
