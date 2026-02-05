@@ -1,7 +1,5 @@
 package agent.platform.llm
 
-import kotlinx.coroutines.flow.Flow
-
 data class ChatCompletionRequest(
     val model: String,
     val messages: List<ChatMessage>,
@@ -19,9 +17,4 @@ sealed interface ChatCompletionEvent {
     data class AssistantDelta(val text: String, val reasoning: String? = null) : ChatCompletionEvent
     data class ToolCallDelta(val id: String, val name: String, val argumentsJson: String) : ChatCompletionEvent
     data class Completed(val finishReason: String? = null) : ChatCompletionEvent
-}
-
-interface LlmProviderPort {
-    suspend fun complete(request: ChatCompletionRequest): String
-    fun stream(request: ChatCompletionRequest): Flow<ChatCompletionEvent>
 }

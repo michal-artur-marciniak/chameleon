@@ -1,5 +1,7 @@
 package agent.platform.llm
 
+import agent.platform.llm.ports.LlmProviderPort
+
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO

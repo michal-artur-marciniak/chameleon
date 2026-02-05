@@ -1,7 +1,7 @@
 package agent.platform.llm
 
-import agent.platform.llm.LlmProviderPort
-import agent.platform.llm.LlmProviderRepositoryPort
+import agent.platform.llm.ports.LlmProviderPort
+import agent.platform.llm.ports.LlmProviderRepositoryPort
 
 class ProviderRegistry(
     private val providers: Map<String, LlmProviderPort>
