@@ -129,6 +129,70 @@ agentLoop.runTurn(runId, session, userMessage, deps).collect { event ->
 - Tool registry (`InMemoryToolRegistry`) validates and executes tool calls
 - Session persistence via `SessionFileRepository`
 
+## Tool Policy Enforcement (DDD Core Domain)
+
+Tool execution is governed by a **domain service** that enforces allow/deny/ask policies:
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain Layer (Core)                      │
+│  ToolPolicyService                                          │
+│  ├── evaluate(toolName, isExecTool, execCommand)            │
+│  │   ├── Check deny list (takes precedence)                │
+│  │   ├── Check allow list                                  │
+│  │   ├── Handle exec tool security modes                   │
+│  │   │   DENY: Always deny                                  │
+│  │   │   ALLOWLIST: Check safe bins                         │
+│  │   │   FULL: Allow all                                    │
+│  │   └── Return Allow / Deny / Ask                         │
+│  └── Safe bins validation for exec commands                │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 Infrastructure Layer                        │
+│  InMemoryToolRegistry (adapter)                             │
+│  ├── validatePolicy(call) → PolicyDecision                  │
+│  ├── execute(call) with policy enforcement                  │
+│  └── Emits ToolPolicyViolation domain events                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Policy Decision Types
+
+- **`Allow`** - Tool execution permitted
+- **`Deny`** - Tool execution blocked (returns ToolResult error)
+- **`Ask`** - Approval required (returns ToolResult with approval request)
+
+### Configuration
+
+```kotlin
+ToolsConfig(
+    allow = listOf("read", "write", "edit", "exec"),  // Whitelist
+    deny = listOf("dangerous_tool"),                   // Blacklist (precedence)
+    exec = ExecToolConfig(
+        security = ExecSecurity.ALLOWLIST,  // DENY | ALLOWLIST | FULL
+        ask = AskMode.ON_MISS,              // OFF | ON_MISS | ALWAYS
+        safeBins = listOf("jq", "grep", "cut", "sort", "uniq")
+    )
+)
+```
+
+### Key Files
+
+- `core/src/main/kotlin/agent/platform/tool/ToolPolicyService.kt` - Domain service
+- `core/src/main/kotlin/agent/platform/tool/ToolDomainEvents.kt` - Domain events
+- `core/src/main/kotlin/agent/platform/tool/ToolRegistry.kt` - Port interface
+- `infra/src/main/kotlin/agent/platform/tool/InMemoryToolRegistry.kt` - Policy enforcement adapter
+
+### Invariants
+
+1. **Deny takes precedence** - Tools in both lists are denied
+2. **Unknown tools require approval** - Follows ask mode configuration
+3. **Exec tool special handling** - Additional security layers beyond basic policy
+4. **Domain events emitted** - `ToolPolicyViolation` events for deny/ask decisions
+
 ## Application Layer (DDD Use Cases)
 
 The application layer implements use cases that orchestrate domain objects:
