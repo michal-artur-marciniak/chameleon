@@ -15,6 +15,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:${property("ktorVersion")}")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${property("kotlinxSerializationVersion")}")
+    implementation("org.xerial:sqlite-jdbc:3.44.1.0")
 
     testImplementation(kotlin("test"))
 }

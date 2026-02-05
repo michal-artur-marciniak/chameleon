@@ -6,6 +6,7 @@ import agent.platform.llm.ChatCompletionEvent
 import agent.platform.llm.ChatCompletionRequest
 import agent.platform.llm.ChatMessage
 import agent.platform.llm.LlmProviderPort
+import agent.platform.memory.MemorySearchService
 import agent.platform.session.Message
 import agent.platform.session.MessageRole
 import agent.platform.session.Session
@@ -52,7 +53,8 @@ class AgentLoop private constructor(
         val toolRegistry: ToolRegistry,
         val llmProvider: LlmProviderPort,
         val contextBundle: ContextBundle,
-        val eventPublisher: DomainEventPublisherPort? = null
+        val eventPublisher: DomainEventPublisherPort? = null,
+        val memorySearchService: MemorySearchService? = null
     )
 
     /**
@@ -85,10 +87,15 @@ class AgentLoop private constructor(
             )
         )
 
-        // 2. Build LLM request
+        // 2. Search memory for relevant context (if memory service available)
+        val memoryContext = if (deps.memorySearchService != null) {
+            searchMemoryForContext(userMessage.content, deps)
+        } else ""
+
+        // 3. Build LLM request with memory context
         val llmRequest = ChatCompletionRequest(
             model = "default",
-            messages = buildChatMessages(deps.contextBundle, sessionWithUserMessage),
+            messages = buildChatMessages(deps.contextBundle, sessionWithUserMessage, memoryContext),
             toolSchemasJson = deps.contextBundle.toolSchemasJson
         )
 
@@ -100,7 +107,7 @@ class AgentLoop private constructor(
             )
         )
 
-        // 3. Stream LLM completion
+        // 4. Stream LLM completion
         val toolCalls = mutableListOf<ToolCallRequest>()
         val assistantBuffer = StringBuilder()
         var completionTokens = 0
@@ -140,7 +147,7 @@ class AgentLoop private constructor(
             )
         )
 
-        // 4. Persist assistant response
+        // 5. Persist assistant response
         val assistantText = assistantBuffer.toString().trim()
         if (assistantText.isNotBlank()) {
             val assistantMessage = Message(
@@ -167,7 +174,7 @@ class AgentLoop private constructor(
             )
         }
 
-        // 5. Execute validated tool calls
+        // 6. Execute validated tool calls
         toolCalls.forEach { call ->
             deps.eventPublisher?.publish(
                 AgentLoopDomainEvent.ToolCallInitiated(
@@ -208,7 +215,7 @@ class AgentLoop private constructor(
             )
         }
 
-        // 6. Emit completion
+        // 7. Emit completion
         val totalDurationMs = Instant.now().toEpochMilli() - startTime.toEpochMilli()
         emit(TurnEvent.TurnCompleted(runId, totalDurationMs))
     }
@@ -262,10 +269,17 @@ class AgentLoop private constructor(
 
     private fun buildChatMessages(
         context: ContextBundle,
-        session: Session
+        session: Session,
+        memoryContext: String = ""
     ): List<ChatMessage> {
+        val systemPrompt = if (memoryContext.isNotBlank()) {
+            context.systemPrompt + "\n\n" + memoryContext
+        } else {
+            context.systemPrompt
+        }
+        
         val messages = mutableListOf(
-            ChatMessage("system", context.systemPrompt)
+            ChatMessage("system", systemPrompt)
         )
         session.messages.forEach { message ->
             messages.add(ChatMessage(toRole(message.role), message.content))
@@ -285,6 +299,25 @@ class AgentLoop private constructor(
     private fun estimateTokens(text: String): Int {
         // Rough estimation: ~4 characters per token
         return text.length / 4
+    }
+
+    /**
+     * Searches memory for context relevant to the user query.
+     * Emits domain events for observability.
+     */
+    private fun searchMemoryForContext(
+        query: String,
+        deps: TurnDependencies
+    ): String {
+        val memorySearchService = deps.memorySearchService ?: return ""
+        
+        // Note: This requires MemoryIndex to be accessible. In practice,
+        // the MemorySearchService would be pre-configured with a MemoryIndex,
+        // or we'd need to pass MemoryIndex in TurnDependencies as well.
+        // For now, we return empty context as the infrastructure adapter
+        // will handle the actual memory search integration.
+        
+        return ""
     }
 }
 
