@@ -1,4 +1,6 @@
-package agent.platform.agent.domain
+package agent.platform.agent.ports
+
+import agent.platform.agent.domain.AgentLoopDomainEvent
 
 /**
  * Port for publishing domain events.

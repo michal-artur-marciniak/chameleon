@@ -6,7 +6,7 @@ import agent.platform.session.SessionKey
 import java.time.Instant
 
 /**
- * Domain events emitted by the AgentLoop aggregate.
+ * Domain events emitted by the agent lifecycle.
  * These represent significant business events in the agent lifecycle.
  */
 sealed interface AgentLoopDomainEvent {

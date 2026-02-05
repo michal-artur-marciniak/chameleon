@@ -2,7 +2,7 @@
 
 ## Domain Aggregate Pattern
 
-The AgentLoop aggregate lives in `domain/AgentLoop.kt` and owns the `runTurn()` orchestration method.
+The AgentLoop aggregate lives in `domain/AgentLoop.kt` and owns the decision logic for a single turn.
 
 ### Key Patterns
 
@@ -11,8 +11,8 @@ The AgentLoop aggregate lives in `domain/AgentLoop.kt` and owns the `runTurn()` 
 // Create via factory method
 val agentLoop = AgentLoop.create(agentId)
 
-// Execute a turn with dependencies passed in
-agentLoop.runTurn(runId, session, userMessage, deps).collect { event ->
+// Process a completion stream with dependencies passed in
+agentLoop.processCompletion(runId, events, deps).collect { event ->
     // Handle turn events
 }
 ```
@@ -21,43 +21,42 @@ agentLoop.runTurn(runId, session, userMessage, deps).collect { event ->
 Domain aggregates receive infrastructure dependencies via a data class to keep them pure:
 ```kotlin
 data class TurnDependencies(
-    val sessionRepository: SessionRepository,
-    val toolRegistry: ToolRegistry,
-    val llmProvider: LlmProviderPort,
-    val contextBundle: ContextBundle,
-    val eventPublisher: DomainEventPublisherPort? = null
+    val toolRegistry: ToolDefinitionRegistry
 )
 ```
 
 **3. Two Types of Events**
-- **TurnEvent** - Synchronous events for the caller to consume (AssistantDelta, ToolStarted, etc.)
+- **TurnEvent** - Synchronous events for the caller to consume (AssistantDelta, TurnCompleted, etc.)
 - **DomainEvent** - Asynchronous events for observability via DomainEventPublisherPort
 
 **4. Tool Validation**
-Tool calls are validated through ToolRegistry before execution:
+Tool calls are validated through ToolDefinitionRegistry before execution:
 ```kotlin
 // Returns null if tool not found - domain emits ToolValidationError
 val toolDef = toolRegistry.get(event.name)
 ```
 
-## Infrastructure Adapter Pattern
+## Application Service Pattern
 
-`DefaultAgentLoop` (infra) acts as an adapter that:
+`AgentTurnService` (application) orchestrates a single turn:
 1. Resolves provider/model references
-2. Creates the domain aggregate
-3. Maps domain TurnEvents to infra AgentEvents
-4. Wires concrete repository implementations to domain ports
+2. Builds context and dependencies
+3. Invokes the domain aggregate
+4. Maps TurnEvents to AgentEvents
+
+`DefaultAgentLoop` (infra) delegates to `AgentRunService`, which wraps `AgentTurnService`.
 
 ## File Organization
 
 - `core/src/main/kotlin/agent/platform/agent/domain/` - Domain aggregates and domain events
+- `core/src/main/kotlin/agent/platform/application/` - Application services (AgentRunService, AgentTurnService)
 - `infra/src/main/kotlin/agent/platform/agent/` - Infrastructure adapters (DefaultAgentLoop, etc.)
 - `app/src/main/kotlin/agent/platform/application/` - Application use cases
 
 ## When Modifying AgentLoop
 
 1. Business logic belongs in the domain aggregate
-2. Infrastructure concerns (provider resolution, etc.) stay in DefaultAgentLoop
-3. Always validate tools via ToolRegistry before execution
-4. Persist assistant responses to SessionRepository
+2. Orchestration and provider resolution live in AgentTurnService
+3. Always validate tools via ToolDefinitionRegistry before execution
+4. Persist assistant responses and tool results in AgentTurnService
 5. Emit domain events via DomainEventPublisherPort for observability

@@ -14,6 +14,6 @@ interface AgentLoop {
 interface ContextAssembler {
     fun build(
         session: agent.platform.session.Session,
-        tools: agent.platform.tool.ToolRegistry
+        tools: agent.platform.tool.ToolDefinitionRegistry
     ): ContextBundle
 }
