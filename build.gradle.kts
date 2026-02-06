@@ -7,7 +7,7 @@ plugins {
 }
 
 allprojects {
-    group = "agent.platform"
+    group = "com.chameleon"
     version = "0.1.0-SNAPSHOT"
 
     repositories {

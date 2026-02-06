@@ -18,7 +18,7 @@ dependencyResolutionManagement {
 }
 
 include(
-    "app",
+    "bootstrap",
     "core",
     "infra",
     "sdk",
