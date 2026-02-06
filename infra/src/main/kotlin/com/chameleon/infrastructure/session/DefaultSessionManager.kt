@@ -1,6 +1,6 @@
 package com.chameleon.infrastructure.session
 
-import com.chameleon.infrastructure.persistence.SessionFileRepository
+import com.chameleon.session.port.SessionRepository
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.Session
 import com.chameleon.session.domain.SessionId
@@ -17,7 +17,7 @@ import kotlinx.coroutines.sync.withLock
  * Automatically creates sessions on demand.
  */
 class DefaultSessionManager(
-    private val repository: SessionFileRepository
+    private val repository: SessionRepository
 ) : SessionManager {
     private val locks = mutableMapOf<String, Mutex>()
 
