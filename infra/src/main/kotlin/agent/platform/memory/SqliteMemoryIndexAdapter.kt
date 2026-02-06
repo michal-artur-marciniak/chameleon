@@ -1,6 +1,10 @@
 package agent.platform.memory
 
-import agent.platform.memory.ports.MemoryIndexRepositoryPort
+import agent.platform.memory.domain.MemoryChunk
+import agent.platform.memory.domain.MemoryIndexStatus
+import agent.platform.memory.domain.MemorySearchQuery
+import agent.platform.memory.domain.MemorySearchResult
+import agent.platform.memory.port.MemoryIndexRepositoryPort
 import java.nio.file.Path
 import java.sql.Connection
 import java.sql.DriverManager

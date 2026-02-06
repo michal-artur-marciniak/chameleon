@@ -1,7 +1,8 @@
 package agent.platform.agent.domain
 
 import agent.platform.agent.RunId
-import agent.platform.tool.ToolCallRequest
+import agent.platform.tool.domain.ToolCallRequest
+import agent.platform.tool.port.ToolDefinitionRegistry
 import agent.platform.llm.ChatCompletionEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -22,7 +23,7 @@ class AgentLoop private constructor(
     }
 
     data class TurnDependencies(
-        val toolRegistry: agent.platform.tool.ToolDefinitionRegistry
+        val toolRegistry: ToolDefinitionRegistry
     )
 
     data class TurnPlan(

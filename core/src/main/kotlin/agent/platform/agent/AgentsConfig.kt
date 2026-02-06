@@ -1,6 +1,6 @@
 package agent.platform.agent
 
-import agent.platform.session.CompactionConfig
+import agent.platform.session.domain.CompactionConfig
 import kotlinx.serialization.Serializable
 
 @Serializable

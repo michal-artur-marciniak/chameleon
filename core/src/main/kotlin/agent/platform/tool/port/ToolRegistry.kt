@@ -1,4 +1,9 @@
-package agent.platform.tool
+package agent.platform.tool.port
+
+import agent.platform.tool.domain.ToolCallRequest
+import agent.platform.tool.domain.ToolDefinition
+import agent.platform.tool.domain.ToolPolicyService
+import agent.platform.tool.domain.ToolResult
 
 /**
  * Port for tool definition lookup.

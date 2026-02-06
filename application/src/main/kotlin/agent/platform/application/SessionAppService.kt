@@ -1,8 +1,8 @@
 package agent.platform.application
 
-import agent.platform.session.CompactionResult
-import agent.platform.session.Session
-import agent.platform.session.SessionManager
+import agent.platform.session.domain.Session
+import agent.platform.session.port.CompactionResult
+import agent.platform.session.port.SessionManager
 
 class SessionAppService(
     private val sessionManager: SessionManager

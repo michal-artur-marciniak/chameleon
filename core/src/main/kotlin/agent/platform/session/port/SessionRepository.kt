@@ -1,4 +1,9 @@
-package agent.platform.session
+package agent.platform.session.port
+
+import agent.platform.session.SessionId
+import agent.platform.session.SessionKey
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.Session
 
 interface SessionRepository {
     fun findByKey(key: SessionKey): Session?

@@ -1,5 +1,10 @@
 package agent.platform.session
 
+import agent.platform.session.domain.CompactionConfig
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.MessageRole
+import agent.platform.session.domain.Session
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

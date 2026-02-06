@@ -1,5 +1,7 @@
 package agent.platform.agent
 
+import agent.platform.session.domain.Session
+import agent.platform.tool.port.ToolDefinitionRegistry
 import kotlinx.coroutines.flow.Flow
 
 interface AgentRuntime {
@@ -13,7 +15,7 @@ interface AgentLoop {
 
 interface ContextAssembler {
     fun build(
-        session: agent.platform.session.Session,
-        tools: agent.platform.tool.ToolDefinitionRegistry
+        session: Session,
+        tools: ToolDefinitionRegistry
     ): ContextBundle
 }

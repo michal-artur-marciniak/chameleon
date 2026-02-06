@@ -1,6 +1,10 @@
 package agent.platform.session
 
 import agent.platform.persistence.SessionFileRepository
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.Session
+import agent.platform.session.port.CompactionResult
+import agent.platform.session.port.SessionManager
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 

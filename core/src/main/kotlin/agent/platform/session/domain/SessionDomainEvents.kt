@@ -1,4 +1,7 @@
-package agent.platform.session
+package agent.platform.session.domain
+
+import agent.platform.session.SessionId
+import agent.platform.session.domain.MessageRole
 
 import java.time.Instant
 import java.util.UUID

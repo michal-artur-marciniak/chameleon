@@ -1,4 +1,4 @@
-package agent.platform.session
+package agent.platform.session.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

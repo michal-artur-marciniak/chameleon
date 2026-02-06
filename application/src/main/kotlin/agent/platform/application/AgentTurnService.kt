@@ -9,7 +9,7 @@ import agent.platform.agent.ContextBundle
 import agent.platform.agent.ToolPhase
 import agent.platform.agent.domain.AgentLoop as AgentLoopAggregate
 import agent.platform.agent.domain.AgentLoopDomainEvent
-import agent.platform.agent.ports.DomainEventPublisherPort
+import agent.platform.agent.port.DomainEventPublisherPort
 import agent.platform.agent.domain.TurnEvent
 import agent.platform.application.llm.LlmRequestBuilder
 import agent.platform.application.memory.MemoryContextAssembler
@@ -17,18 +17,16 @@ import agent.platform.config.PlatformConfig
 import agent.platform.llm.ModelRefResolutionError
 import agent.platform.llm.ModelRefResolver
 import agent.platform.llm.ModelRef
-import agent.platform.llm.ports.LlmProviderPort
-import agent.platform.llm.ports.LlmProviderRepositoryPort
-import agent.platform.session.Message
-import agent.platform.session.MessageRole
-import agent.platform.session.Session
-import agent.platform.session.SessionManager
-import agent.platform.session.SessionRepository
-import agent.platform.tool.ToolCallRequest
-import agent.platform.tool.ToolDefinitionRegistry
-import agent.platform.application.ToolExecutionService
-import agent.platform.application.SessionAppService
-import agent.platform.tool.ToolResult
+import agent.platform.llm.port.LlmProviderPort
+import agent.platform.llm.port.LlmProviderRepositoryPort
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.MessageRole
+import agent.platform.session.domain.Session
+import agent.platform.session.port.SessionManager
+import agent.platform.session.port.SessionRepository
+import agent.platform.tool.domain.ToolCallRequest
+import agent.platform.tool.domain.ToolResult
+import agent.platform.tool.port.ToolDefinitionRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.Instant

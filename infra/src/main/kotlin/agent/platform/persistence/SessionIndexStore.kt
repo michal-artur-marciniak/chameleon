@@ -1,6 +1,6 @@
 package agent.platform.persistence
 
-import agent.platform.session.SessionMetadata
+import agent.platform.session.domain.SessionMetadata
 import kotlinx.serialization.Serializable
 
 @Serializable

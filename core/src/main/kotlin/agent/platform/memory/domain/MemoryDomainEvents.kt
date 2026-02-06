@@ -1,4 +1,4 @@
-package agent.platform.memory
+package agent.platform.memory.domain
 
 import java.time.Instant
 import java.util.UUID

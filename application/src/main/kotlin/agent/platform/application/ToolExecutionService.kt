@@ -1,11 +1,11 @@
 package agent.platform.application
 
-import agent.platform.tool.ToolCallRequest
-import agent.platform.tool.ToolDefinitionRegistry
-import agent.platform.tool.ToolExecutor
-import agent.platform.tool.ToolPolicyEvaluator
-import agent.platform.tool.ToolPolicyService
-import agent.platform.tool.ToolResult
+import agent.platform.tool.domain.ToolCallRequest
+import agent.platform.tool.domain.ToolPolicyService
+import agent.platform.tool.domain.ToolResult
+import agent.platform.tool.port.ToolDefinitionRegistry
+import agent.platform.tool.port.ToolExecutor
+import agent.platform.tool.port.ToolPolicyEvaluator
 
 class ToolExecutionService(
     private val toolDefinitionRegistry: ToolDefinitionRegistry,

@@ -1,4 +1,4 @@
-package agent.platform.tool
+package agent.platform.tool.domain
 
 /**
  * Domain service for evaluating tool execution policies.

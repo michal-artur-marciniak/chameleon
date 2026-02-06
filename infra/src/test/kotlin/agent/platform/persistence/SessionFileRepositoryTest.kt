@@ -1,11 +1,11 @@
 package agent.platform.persistence
 
-import agent.platform.session.Message
-import agent.platform.session.MessageRole
-import agent.platform.session.Session
+import agent.platform.session.PeerType
 import agent.platform.session.SessionId
 import agent.platform.session.SessionKey
-import agent.platform.session.PeerType
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.MessageRole
+import agent.platform.session.domain.Session
 import kotlinx.serialization.json.Json
 import java.nio.file.Files
 import kotlin.test.Test

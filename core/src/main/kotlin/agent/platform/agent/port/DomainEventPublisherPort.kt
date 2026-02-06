@@ -1,4 +1,4 @@
-package agent.platform.agent.ports
+package agent.platform.agent.port
 
 import agent.platform.agent.domain.AgentLoopDomainEvent
 

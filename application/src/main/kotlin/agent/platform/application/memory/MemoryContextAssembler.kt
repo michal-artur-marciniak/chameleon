@@ -1,9 +1,9 @@
 package agent.platform.application.memory
 
-import agent.platform.memory.MemoryIndex
-import agent.platform.memory.MemorySearchService
-import agent.platform.session.Message
-import agent.platform.session.MessageRole
+import agent.platform.memory.domain.MemoryIndex
+import agent.platform.memory.domain.MemorySearchService
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.MessageRole
 
 class MemoryContextAssembler(
     private val memoryIndex: MemoryIndex,

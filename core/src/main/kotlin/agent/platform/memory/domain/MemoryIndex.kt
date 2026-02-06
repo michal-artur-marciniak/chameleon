@@ -1,6 +1,6 @@
-package agent.platform.memory
+package agent.platform.memory.domain
 
-import agent.platform.memory.ports.MemoryIndexRepositoryPort
+import agent.platform.memory.port.MemoryIndexRepositoryPort
 import java.io.File
 
 /**

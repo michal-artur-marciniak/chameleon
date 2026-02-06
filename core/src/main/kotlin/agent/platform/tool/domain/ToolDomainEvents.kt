@@ -1,4 +1,4 @@
-package agent.platform.tool
+package agent.platform.tool.domain
 
 /**
  * Domain events for tool registry operations.

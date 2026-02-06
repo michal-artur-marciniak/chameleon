@@ -3,7 +3,7 @@ package agent.platform.application.llm
 import agent.platform.agent.ContextBundle
 import agent.platform.llm.ChatCompletionRequest
 import agent.platform.llm.ChatMessage
-import agent.platform.session.MessageRole
+import agent.platform.session.domain.MessageRole
 
 data class LlmRequestPlan(
     val request: ChatCompletionRequest,

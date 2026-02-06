@@ -1,11 +1,11 @@
 package agent.platform.persistence
 
-import agent.platform.session.Message
-import agent.platform.session.Session
 import agent.platform.session.SessionId
 import agent.platform.session.SessionKey
-import agent.platform.session.SessionRepository
-import agent.platform.session.SessionSummary
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.Session
+import agent.platform.session.port.SessionRepository
+import agent.platform.session.port.SessionSummary
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json

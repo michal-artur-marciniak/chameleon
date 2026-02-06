@@ -1,6 +1,6 @@
 package agent.platform.llm
 
-import agent.platform.llm.ports.LlmProviderRepositoryPort
+import agent.platform.llm.port.LlmProviderRepositoryPort
 
 data class ModelRef(
     val providerId: String,

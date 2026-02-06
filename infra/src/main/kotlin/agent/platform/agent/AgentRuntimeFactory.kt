@@ -1,6 +1,6 @@
 package agent.platform.agent
 
-import agent.platform.agent.ports.DomainEventPublisherPort
+import agent.platform.agent.port.DomainEventPublisherPort
 import agent.platform.application.AgentRunService
 import agent.platform.application.AgentTurnService
 import agent.platform.application.SessionAppService
@@ -10,8 +10,9 @@ import agent.platform.config.PlatformConfig
 import agent.platform.llm.ModelRefResolver
 import agent.platform.llm.OpenAiCompatProvider
 import agent.platform.llm.ProviderRegistry
-import agent.platform.memory.MemoryIndex
-import agent.platform.memory.MemorySearchService
+import agent.platform.memory.domain.MemoryIndex
+import agent.platform.memory.domain.MemorySearchService
+import agent.platform.memory.SqliteMemoryIndexAdapter
 import agent.platform.persistence.SessionFileRepository
 import agent.platform.session.DefaultSessionManager
 import agent.platform.tool.InMemoryToolDefinitionRegistry
@@ -78,7 +79,7 @@ object AgentRuntimeFactory {
         val dataDir = Paths.get(config.agents.defaults.workspace).resolve("data")
         Files.createDirectories(dataDir)
         val dbPath = dataDir.resolve("memory.sqlite")
-        val adapter = agent.platform.memory.SqliteMemoryIndexAdapter(dbPath)
+        val adapter = SqliteMemoryIndexAdapter(dbPath)
         return MemoryIndex.create(repository = adapter)
     }
 }

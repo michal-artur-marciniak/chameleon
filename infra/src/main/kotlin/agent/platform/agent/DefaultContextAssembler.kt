@@ -1,10 +1,10 @@
 package agent.platform.agent
 
 import agent.platform.config.PlatformConfig
-import agent.platform.session.Message
-import agent.platform.session.MessageRole
-import agent.platform.session.Session
-import agent.platform.tool.ToolDefinitionRegistry
+import agent.platform.session.domain.Message
+import agent.platform.session.domain.MessageRole
+import agent.platform.session.domain.Session
+import agent.platform.tool.port.ToolDefinitionRegistry
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.ZoneId

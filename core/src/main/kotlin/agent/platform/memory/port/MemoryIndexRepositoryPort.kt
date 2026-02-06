@@ -1,9 +1,9 @@
-package agent.platform.memory.ports
+package agent.platform.memory.port
 
-import agent.platform.memory.MemoryChunk
-import agent.platform.memory.MemoryIndexStatus
-import agent.platform.memory.MemorySearchQuery
-import agent.platform.memory.MemorySearchResult
+import agent.platform.memory.domain.MemoryChunk
+import agent.platform.memory.domain.MemoryIndexStatus
+import agent.platform.memory.domain.MemorySearchQuery
+import agent.platform.memory.domain.MemorySearchResult
 
 /**
  * Port for memory index repository operations.

@@ -5,7 +5,7 @@ import agent.platform.channel.ChannelsConfig
 import agent.platform.channel.GatewayConfig
 import agent.platform.llm.ModelsConfig
 import agent.platform.session.MessagesConfig
-import agent.platform.tool.ToolsConfig
+import agent.platform.tool.domain.ToolsConfig
 import kotlinx.serialization.Serializable
 
 @Serializable

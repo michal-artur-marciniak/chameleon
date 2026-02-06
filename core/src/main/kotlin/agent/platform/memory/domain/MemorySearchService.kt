@@ -1,4 +1,4 @@
-package agent.platform.memory
+package agent.platform.memory.domain
 
 /**
  * Domain service for memory search operations.

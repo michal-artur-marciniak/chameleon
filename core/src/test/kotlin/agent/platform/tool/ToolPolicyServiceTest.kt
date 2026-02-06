@@ -1,7 +1,13 @@
 package agent.platform.tool
 
-import org.junit.jupiter.api.Test
+import agent.platform.tool.domain.AskMode
+import agent.platform.tool.domain.ExecSecurity
+import agent.platform.tool.domain.ExecToolConfig
+import agent.platform.tool.domain.ToolPolicyService
+import agent.platform.tool.domain.ToolsConfig
+
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 class ToolPolicyServiceTest {
 

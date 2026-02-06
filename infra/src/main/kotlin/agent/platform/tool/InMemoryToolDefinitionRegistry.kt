@@ -1,5 +1,8 @@
 package agent.platform.tool
 
+import agent.platform.tool.domain.ToolDefinition
+import agent.platform.tool.port.ToolDefinitionRegistry
+
 /**
  * In-memory implementation of ToolDefinitionRegistry.
  */

@@ -1,4 +1,4 @@
-package agent.platform.memory
+package agent.platform.memory.domain
 
 /**
  * Configuration for memory indexing and search behavior.

@@ -1,4 +1,4 @@
-package agent.platform.llm.ports
+package agent.platform.llm.port
 
 import agent.platform.llm.ChatCompletionEvent
 import agent.platform.llm.ChatCompletionRequest

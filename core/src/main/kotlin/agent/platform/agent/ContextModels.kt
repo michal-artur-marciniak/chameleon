@@ -1,8 +1,10 @@
 package agent.platform.agent
 
+import agent.platform.session.domain.Message
+
 data class ContextBundle(
     val systemPrompt: String,
-    val messages: List<agent.platform.session.Message>,
+    val messages: List<Message>,
     val toolSchemasJson: String,
     val report: SystemPromptReport
 )

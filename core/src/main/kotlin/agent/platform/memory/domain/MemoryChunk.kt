@@ -1,4 +1,4 @@
-package agent.platform.memory
+package agent.platform.memory.domain
 
 /**
  * Value object representing a chunk of indexed memory content.
