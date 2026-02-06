@@ -5,7 +5,7 @@ import com.chameleon.application.AgentRunService
 import com.chameleon.application.AgentTurnService
 import com.chameleon.application.SessionAppService
 import com.chameleon.application.ToolExecutionService
-import com.chameleon.application.memory.MemoryContextAssembler
+import com.chameleon.application.MemoryContextAssembler
 import com.chameleon.config.PlatformConfig
 import com.chameleon.llm.ModelRefResolver
 import com.chameleon.llm.OpenAiCompatProvider

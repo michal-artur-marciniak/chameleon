@@ -1,0 +1,344 @@
+# Package Structure Refactoring Plan
+
+## Overview
+
+This document outlines the complete 3-phase refactoring to align the codebase with DDD best practices as documented in ARCHITECTURE.md and DOMAINS.md.
+
+---
+
+## Phase 1: Application Layer Consolidation
+
+### Goal
+Move all application services from `core/` and use cases from `bootstrap/` into a new `application/` module.
+
+### Current State
+- Application services in `core/src/main/kotlin/com/chameleon/application/`
+- Use cases in `bootstrap/src/main/kotlin/com/chameleon/application/`
+- App module depends on both
+
+### Target State
+- New `application/` module contains ALL application layer code
+- `bootstrap/` module for wiring only
+- Clear separation: domain (core) vs application (application) vs infrastructure (infra)
+
+### Steps
+
+1. **Create application module structure:**
+```
+application/
+├── build.gradle.kts
+└── src/main/kotlin/com/chameleon/application/
+    ├── AgentTurnService.kt
+    ├── AgentRunService.kt
+    ├── SessionAppService.kt
+    ├── ToolExecutionService.kt
+    ├── HandleInboundMessageUseCase.kt
+    ├── llm/
+    │   └── LlmRequestBuilder.kt
+    └── memory/
+        └── MemoryContextAssembler.kt
+```
+
+2. **application/build.gradle.kts:**
+```kotlin
+plugins {
+    kotlin("jvm")
+    kotlin("plugin.serialization")
+}
+
+dependencies {
+    implementation(project(":core"))
+    implementation(project(":infra"))
+    implementation(project(":sdk"))
+    implementation(project(":plugins:telegram"))
+    
+    implementation("io.ktor:ktor-server-core-jvm:${property("ktorVersion")}")
+    implementation("io.ktor:ktor-client-core-jvm:${property("ktorVersion")}")
+    implementation("org.slf4j:slf4j-api:2.0.12")
+    implementation("ch.qos.logback:logback-classic:${property("logbackVersion")}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${property("kotlinxSerializationVersion")}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${property("kotlinxCoroutinesVersion")}")
+    
+    testImplementation(kotlin("test"))
+}
+```
+
+3. **Move files:**
+- Copy from `core/src/main/kotlin/com/chameleon/application/` → `application/`
+- Copy from `bootstrap/src/main/kotlin/com/chameleon/application/` → `application/`
+   - Remove old directories after successful build
+
+4. **Update settings.gradle.kts:**
+```kotlin
+include(
+    "bootstrap",
+    "core",
+    "infra",
+    "sdk",
+    "application", // NEW
+    "plugins:telegram"
+)
+```
+
+5. **Update bootstrap/build.gradle.kts:**
+```kotlin
+dependencies {
+    implementation(project(":core"))
+    implementation(project(":infra"))
+    implementation(project(":sdk"))
+    implementation(project(":application")) // NEW dependency
+    implementation(project(":plugins:telegram"))
+    // ... rest unchanged
+}
+```
+
+---
+
+## Phase 2: Domain Packaging Standardization
+
+### Goal
+Standardize all bounded contexts to use `domain/` and `port/` subdirectories.
+
+### Current State (after Phase 1)
+- `agent/` - has `domain/` ✓
+- `session/` - flat structure ✗
+- `memory/` - flat structure ✗
+- `tool/` - flat structure ✗
+- `plugin/` - has `domain/` ✓
+- `identity/` - missing entirely ✗
+- Ports scattered in `ports/` or root
+
+### Target State
+All contexts follow:
+```
+<context>/
+├── domain/          # Domain aggregates, entities, value objects, events
+│   ├── *.kt
+│   └── *Events.kt
+└── port/            # Repository and service ports
+    └── *Port.kt
+```
+
+### Steps
+
+1. **Create directories:**
+```bash
+mkdir -p core/src/main/kotlin/com/chameleon/session/domain
+mkdir -p core/src/main/kotlin/com/chameleon/session/port
+mkdir -p core/src/main/kotlin/com/chameleon/memory/domain
+mkdir -p core/src/main/kotlin/com/chameleon/memory/port
+mkdir -p core/src/main/kotlin/com/chameleon/tool/domain
+mkdir -p core/src/main/kotlin/com/chameleon/tool/port
+mkdir -p core/src/main/kotlin/com/chameleon/identity/domain
+mkdir -p core/src/main/kotlin/com/chameleon/identity/port
+```
+
+2. **Move Session files:**
+```
+Session.kt → session/domain/
+Message.kt → session/domain/
+SessionDomainEvents.kt → session/domain/
+CompactionConfig.kt → session/domain/
+SessionRepository.kt → session/port/
+SessionManager.kt → session/port/
+```
+
+3. **Move Memory files:**
+```
+MemoryIndex.kt → memory/domain/
+MemoryChunk.kt → memory/domain/
+MemoryDomainEvents.kt → memory/domain/
+MemoryConfig.kt → memory/domain/
+MemorySearchService.kt → memory/domain/
+ports/MemoryIndexRepositoryPort.kt → memory/port/
+```
+
+4. **Move Tool files:**
+```
+ToolPolicyService.kt → tool/domain/
+ToolDomainEvents.kt → tool/domain/
+ToolModels.kt → tool/domain/
+ToolsConfig.kt → tool/domain/
+ToolRegistry.kt → tool/port/
+```
+
+5. **Standardize existing port directories:**
+```
+agent/ports/ → agent/port/
+llm/ports/ → llm/port/
+```
+
+6. **Update imports in moved files**
+
+---
+
+## Phase 3: Package Rename (agent.platform → com.chameleon)
+
+### Goal
+Rename root package from `agent.platform` to `com.chameleon` and flatten hierarchy.
+
+### Current State (after Phases 1-2)
+- Package: `com.chameleon.*`
+- Structure: `com/chameleon/<context>/`
+
+### Target State
+- Package: `com.chameleon.*`
+- Structure: `com/chameleon/<context>/`
+- SDK: `com.chameleon.sdk`
+- Plugins: `com.chameleon.plugin.*`
+
+### Steps
+
+1. **Create new package structure:**
+```bash
+# Core domain
+mkdir -p core/src/main/kotlin/com/chameleon/{agent,session,memory,tool,plugin,identity,llm,channel,config}
+
+# Application layer
+mkdir -p application/src/main/kotlin/com/chameleon
+
+# Infrastructure
+mkdir -p infra/src/main/kotlin/com/chameleon/{persistence,llm,tool,agent,memory,channel,plugin,config}
+
+# Bootstrap (formerly app)
+mkdir -p bootstrap/src/main/kotlin/com/chameleon
+
+# SDK
+mkdir -p sdk/src/main/kotlin/com/chameleon/sdk
+
+# Plugins
+mkdir -p plugins/telegram/src/main/kotlin/com/chameleon/plugin/telegram
+```
+
+2. **Copy all files to new locations**
+
+3. **Update package declarations:**
+```kotlin
+// Old
+package com.chameleon.agent.domain
+import com.chameleon.session.Session
+import agent.sdk.ChannelPort
+
+// New
+package com.chameleon.agent.domain
+import com.chameleon.session.Session
+import com.chameleon.sdk.ChannelPort
+```
+
+4. **Update build files:**
+```kotlin
+// bootstrap/build.gradle.kts
+application {
+    mainClass.set("com.chameleon.ApplicationKt")
+}
+
+tasks.register<Jar>("fatJar") {
+    manifest {
+        attributes["Main-Class"] = "com.chameleon.ApplicationKt"
+    }
+}
+```
+
+5. **Rename app → bootstrap**
+```kotlin
+// settings.gradle.kts
+include(
+    "bootstrap"
+    "core",
+    "infra",
+    "sdk",
+    "application",
+    "plugins:telegram"
+)
+```
+
+---
+
+## Execution Strategy
+
+### Option A: Incremental (Recommended)
+Execute one phase at a time, verify build after each:
+
+1. Complete Phase 1 → Build → Commit
+2. Complete Phase 2 → Build → Commit
+3. Complete Phase 3 → Build → Commit
+
+### Option B: Automated Script
+Create a comprehensive script that does all phases atomically.
+
+### Option C: Manual Step-by-Step
+Follow each step manually with verification.
+
+---
+
+## Verification Checklist
+
+After each phase, verify:
+- [ ] `./gradlew build` succeeds
+- [ ] No compilation errors
+- [ ] All imports resolve
+- [ ] Tests pass (if any)
+- [ ] Main application starts
+
+---
+
+## Risk Mitigation
+
+1. **Before starting:**
+   - Commit all current work
+   - Create feature branch
+   - Ensure CI/CD is green
+
+2. **During refactoring:**
+   - Use `cp` not `mv` until verified
+   - Keep old files until build succeeds
+   - Run build frequently
+
+3. **After completion:**
+   - Run full test suite
+   - Manual smoke test
+   - Update documentation (README.md, AGENTS.md)
+
+---
+
+## Files to Update
+
+### Phase 1
+- `settings.gradle.kts`
+- `bootstrap/build.gradle.kts`
+- `application/build.gradle.kts` (new)
+- All application service files
+
+### Phase 2
+- All domain files (update imports)
+- All files that import from moved locations
+
+### Phase 3
+- All Kotlin files (package + imports)
+- `bootstrap/build.gradle.kts` (mainClass)
+- `settings.gradle.kts` (if renaming app → bootstrap)
+- Documentation files referencing packages
+
+---
+
+## Estimated Effort
+
+- Phase 1: 30 minutes + build verification
+- Phase 2: 45 minutes + import fixes + build verification
+- Phase 3: 60 minutes + import fixes + build verification
+- Total: ~2.5 hours with verification
+
+---
+
+## Next Steps
+
+1. Decide on execution strategy (A, B, or C)
+2. Create feature branch
+3. Execute Phase 1
+4. Verify build
+5. Proceed to Phase 2
+6. Verify build
+7. Proceed to Phase 3
+8. Final verification
+9. Update documentation
+10. Merge to main

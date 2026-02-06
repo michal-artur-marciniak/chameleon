@@ -15,17 +15,19 @@ import org.slf4j.LoggerFactory
 
 /**
  * Use Case: UC-001 - HandleInboundMessageUseCase
- * 
+ *
  * Orchestrates the handling of inbound channel messages through the DDD agent runtime.
- * 
+ *
  * Responsibilities:
  * - Maps inbound messages to SessionKeys
  * - Starts agent runs via the AgentRuntime
  * - Streams lifecycle and assistant events
  * - Handles response buffering and outbound message delivery
- * 
+ *
  * This is the application layer entry point for channel message processing,
  * keeping channel adapters thin and pushing orchestration to the application layer.
+ *
+ * @property agentRuntime The runtime for starting agent runs
  */
 class HandleInboundMessageUseCase(
     private val agentRuntime: AgentRuntime
@@ -129,6 +131,13 @@ class HandleInboundMessageUseCase(
     
     /**
      * Builds a SessionKey from channel and inbound message.
+     *
+     * Determines peer type based on whether the message is from a group chat.
+     *
+     * @param channel The channel port
+     * @param inbound The inbound message with chat metadata
+     * @param agentId The agent ID assigned to handle this conversation
+     * @return SessionKey identifying this conversation uniquely
      */
     private fun buildSessionKey(
         channel: ChannelPort,

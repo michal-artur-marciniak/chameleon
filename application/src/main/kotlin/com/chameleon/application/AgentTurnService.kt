@@ -11,8 +11,6 @@ import com.chameleon.agent.domain.AgentLoop as AgentLoopAggregate
 import com.chameleon.agent.domain.AgentLoopDomainEvent
 import com.chameleon.agent.port.DomainEventPublisherPort
 import com.chameleon.agent.domain.TurnEvent
-import com.chameleon.application.llm.LlmRequestBuilder
-import com.chameleon.application.memory.MemoryContextAssembler
 import com.chameleon.config.PlatformConfig
 import com.chameleon.llm.ModelRefResolutionError
 import com.chameleon.llm.ModelRefResolver
@@ -32,6 +30,29 @@ import kotlinx.coroutines.flow.flow
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * Core service that orchestrates a single agent turn.
+ *
+ * Handles the complete turn lifecycle:
+ * 1. Build turn context (session, tools, model resolution)
+ * 2. Stream LLM completion with tool calls
+ * 3. Execute tool calls with policy validation
+ * 4. Persist messages and publish domain events
+ * 5. Trigger session compaction if needed
+ *
+ * @property config Platform configuration for agents and models
+ * @property sessionManager Manages session locking
+ * @property sessionRepository Persists session messages
+ * @property sessionAppService Handles session compaction
+ * @property contextAssembler Builds context bundles with system prompts and tools
+ * @property toolDefinitionRegistry Registry of available tools
+ * @property toolExecutionService Executes tool calls with policy validation
+ * @property providerRegistry Registry of LLM providers
+ * @property modelRefResolver Resolves model references to provider/model pairs
+ * @property eventPublisher Optional publisher for domain events (observability)
+ * @property llmRequestBuilder Builds LLM completion requests
+ * @property memoryContextAssembler Optional assembler for injecting memory context
+ */
 class AgentTurnService(
     private val config: PlatformConfig,
     private val sessionManager: SessionManager,
@@ -46,6 +67,18 @@ class AgentTurnService(
     private val llmRequestBuilder: LlmRequestBuilder = LlmRequestBuilder(),
     private val memoryContextAssembler: MemoryContextAssembler? = null
 ) : AgentLoop {
+    /**
+     * Executes a single agent turn.
+     *
+     * The turn includes: building context, calling LLM, executing any tool calls,
+     * persisting messages, publishing events, and optionally compacting the session.
+     *
+     * @param request The run request containing session key, agent ID, and inbound message
+     * @return Flow of agent events streamed during the turn:
+     *         - [AgentEvent.AssistantDelta] for streaming assistant responses
+     *         - [AgentEvent.ToolEvent] for tool execution lifecycle
+     *         - [AgentEvent.Lifecycle] for run start/end/error
+     */
     override fun run(request: AgentRunRequest): Flow<AgentEvent> = flow {
         val runId = request.runId
 
@@ -131,6 +164,15 @@ class AgentTurnService(
         }
     }
 
+    /**
+     * Resolves the model reference for the given agent.
+     *
+     * Uses agent-specific model config if available, otherwise falls back to default.
+     *
+     * @param agentId The agent identifier
+     * @return Resolved model reference with provider ID and model ID
+     * @throws IllegalStateException if the model reference cannot be resolved
+     */
     private fun resolveModel(agentId: String): ModelRef {
         val defaultModel = config.agents.defaults.model.primary
         val agent = config.agents.list.firstOrNull { it.id == agentId }
@@ -139,6 +181,13 @@ class AgentTurnService(
         return resolution.modelRef ?: throw IllegalStateException(formatModelRefError(modelRef, resolution.error))
     }
 
+    /**
+     * Formats model reference resolution errors into human-readable messages.
+     *
+     * @param modelRef The model reference that failed to resolve
+     * @param error The specific resolution error
+     * @return Formatted error message
+     */
     private fun formatModelRefError(modelRef: String, error: ModelRefResolutionError?): String {
         return when (error) {
             is ModelRefResolutionError.BlankModelRef -> error.message
@@ -160,6 +209,15 @@ class AgentTurnService(
         val llmProvider: LlmProviderPort
     )
 
+    /**
+     * Builds the turn context including agent loop, messages, tools, and model info.
+     *
+     * Persists the user message and publishes start events.
+     *
+     * @param session The current session
+     * @param request The run request
+     * @return Complete turn context ready for LLM completion
+     */
     private fun buildTurnContext(
         session: Session,
         request: AgentRunRequest
@@ -205,6 +263,13 @@ class AgentTurnService(
         )
     }
 
+    /**
+     * Persists the assistant's response message if non-empty.
+     *
+     * @param contextState The turn context
+     * @param runId The current run ID
+     * @param plan The turn plan containing the assistant's text
+     */
     private fun persistAssistantResponse(
         contextState: TurnContext,
         runId: RunId,
@@ -234,6 +299,16 @@ class AgentTurnService(
         )
     }
 
+    /**
+     * Executes a list of tool calls sequentially.
+     *
+     * Publishes events for each tool call and persists tool results as messages.
+     *
+     * @param contextState The turn context
+     * @param runId The current run ID
+     * @param toolCalls The tool calls to execute
+     * @param emitEvent Callback to emit tool events to the flow
+     */
     private suspend fun executeToolCalls(
         contextState: TurnContext,
         runId: RunId,
@@ -281,6 +356,12 @@ class AgentTurnService(
     }
 
 
+    /**
+     * Delegates tool execution to [toolExecutionService].
+     *
+     * @param call The tool call request to execute
+     * @return The tool execution result
+     */
     private suspend fun executeTool(call: ToolCallRequest): ToolResult {
         return toolExecutionService.execute(call)
     }
