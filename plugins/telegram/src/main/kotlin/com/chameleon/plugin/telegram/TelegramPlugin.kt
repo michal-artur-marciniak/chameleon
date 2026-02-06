@@ -18,6 +18,13 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 
+/**
+ * Telegram Bot API channel implementation.
+ * Uses long-polling to receive messages and supports sending replies.
+ *
+ * @property token Bot token from @BotFather
+ * @property requireMentionInGroups If true, only respond to messages mentioning the bot in groups
+ */
 class TelegramPlugin(
     private val token: String,
     private val requireMentionInGroups: Boolean = true
@@ -38,6 +45,10 @@ class TelegramPlugin(
     private var offset: Long = 0
     private var botUsername: String? = null
 
+    /**
+     * Start the polling loop to receive messages.
+     * Disables webhooks, fetches bot info, then polls for updates.
+     */
     override suspend fun start(handler: suspend (InboundMessage) -> Unit) {
         disableWebhook()
         botUsername = fetchBotUsername()
@@ -71,6 +82,10 @@ class TelegramPlugin(
         }
     }
 
+    /**
+     * Send a message to a Telegram chat.
+     * @param message The message to send (chatId should be numeric)
+     */
     override suspend fun send(message: OutboundMessage): Result<Unit> {
         return runCatching {
             client.post("$baseUrl/sendMessage") {
@@ -85,11 +100,13 @@ class TelegramPlugin(
         }
     }
 
+    /** Stop polling and close the HTTP client */
     override suspend fun stop() {
         running = false
         client.close()
     }
 
+    /** Poll for updates from Telegram with 60-second timeout */
     private suspend fun pollUpdates(): List<TelegramUpdate> {
         val response: TelegramUpdateResponse = client.get("$baseUrl/getUpdates") {
             url { parameters.append("timeout", "60") }
@@ -104,6 +121,7 @@ class TelegramPlugin(
         return response.result
     }
 
+    /** Get bot username for mention detection */
     private suspend fun fetchBotUsername(): String? {
         val response: GetMeResponse = client.get("$baseUrl/getMe").body()
         if (!response.ok) {
@@ -113,6 +131,7 @@ class TelegramPlugin(
         return response.result?.username
     }
 
+    /** Remove any configured webhook to enable polling */
     private suspend fun disableWebhook() {
         val response: TelegramSimpleResponse = client.post("$baseUrl/deleteWebhook") {
             url { parameters.append("drop_pending_updates", "true") }
@@ -122,6 +141,7 @@ class TelegramPlugin(
         }
     }
 
+    /** Check if the bot is mentioned in the message text */
     private fun isMentioned(text: String): Boolean {
         val name = botUsername ?: return false
         return text.contains("@$name", ignoreCase = true)
