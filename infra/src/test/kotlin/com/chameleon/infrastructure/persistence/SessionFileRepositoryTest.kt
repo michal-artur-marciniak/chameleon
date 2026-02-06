@@ -1,8 +1,8 @@
 package com.chameleon.persistence
 
-import com.chameleon.session.PeerType
-import com.chameleon.session.SessionId
-import com.chameleon.session.SessionKey
+import com.chameleon.session.domain.PeerType
+import com.chameleon.session.domain.SessionId
+import com.chameleon.session.domain.SessionKey
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.MessageRole
 import com.chameleon.session.domain.Session

@@ -3,6 +3,8 @@ package com.chameleon.session
 import com.chameleon.persistence.SessionFileRepository
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.Session
+import com.chameleon.session.domain.SessionId
+import com.chameleon.session.domain.SessionKey
 import com.chameleon.session.port.CompactionResult
 import com.chameleon.session.port.SessionManager
 import kotlinx.coroutines.sync.Mutex

@@ -1,8 +1,9 @@
 package com.chameleon.config
 
 import kotlinx.serialization.json.Json
-import com.chameleon.config.LogFormat
-import com.chameleon.config.LogLevel
+import com.chameleon.config.domain.LogFormat
+import com.chameleon.config.domain.LogLevel
+import com.chameleon.config.domain.PlatformConfig
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths

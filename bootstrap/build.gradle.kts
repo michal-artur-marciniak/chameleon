@@ -8,8 +8,6 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":infra"))
     implementation(project(":sdk"))
-    implementation(project(":application"))
-    implementation(project(":plugins:telegram"))
 
     implementation("io.ktor:ktor-server-core-jvm:${property("ktorVersion")}")
     implementation("io.ktor:ktor-server-netty-jvm:${property("ktorVersion")}")

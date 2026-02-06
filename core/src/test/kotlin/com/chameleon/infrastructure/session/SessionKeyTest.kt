@@ -1,5 +1,7 @@
 package com.chameleon.session
 
+import com.chameleon.session.domain.PeerType
+import com.chameleon.session.domain.SessionKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

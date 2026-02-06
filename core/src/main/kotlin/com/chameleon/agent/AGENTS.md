@@ -49,7 +49,7 @@ val toolDef = toolRegistry.get(event.name)
 ## File Organization
 
 - `core/src/main/kotlin/com/chameleon/agent/domain/` - Domain aggregates and domain events
-- `application/src/main/kotlin/com/chameleon/application/` - Application services (AgentRunService, AgentTurnService)
+- `core/src/main/kotlin/com/chameleon/application/` - Application services (AgentRunService, AgentTurnService)
 - `infra/src/main/kotlin/com/chameleon/agent/` - Infrastructure adapters (DefaultAgentLoop, etc.)
 - `bootstrap/src/main/kotlin/com/chameleon/` - Bootstrap wiring and entrypoint
 

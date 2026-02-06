@@ -9,88 +9,43 @@ This document outlines the complete 3-phase refactoring to align the codebase wi
 ## Phase 1: Application Layer Consolidation
 
 ### Goal
-Move all application services from `core/` and use cases from `bootstrap/` into a new `application/` module.
+Move application services to `core/src/main/kotlin/com/chameleon/application/` and keep use cases in core.
 
 ### Current State
 - Application services in `core/src/main/kotlin/com/chameleon/application/`
-- Use cases in `bootstrap/src/main/kotlin/com/chameleon/application/`
-- App module depends on both
+- Use cases in `core/src/main/kotlin/com/chameleon/application/`
 
 ### Target State
-- New `application/` module contains ALL application layer code
+- `core/` module contains ALL application layer code
 - `bootstrap/` module for wiring only
-- Clear separation: domain (core) vs application (application) vs infrastructure (infra)
+- Clear separation: domain + application (core) vs infrastructure (infra)
 
 ### Steps
 
-1. **Create application module structure:**
+1. **Ensure core application package structure:**
 ```
-application/
-├── build.gradle.kts
-└── src/main/kotlin/com/chameleon/application/
-    ├── AgentTurnService.kt
-    ├── AgentRunService.kt
-    ├── SessionAppService.kt
-    ├── ToolExecutionService.kt
-    ├── HandleInboundMessageUseCase.kt
-    ├── llm/
-    │   └── LlmRequestBuilder.kt
-    └── memory/
-        └── MemoryContextAssembler.kt
+core/src/main/kotlin/com/chameleon/application/
+├── AgentTurnService.kt
+├── AgentRunService.kt
+├── SessionAppService.kt
+├── ToolExecutionService.kt
+├── HandleInboundMessageUseCase.kt
+├── LlmRequestBuilder.kt
+└── MemoryContextAssembler.kt
 ```
 
-2. **application/build.gradle.kts:**
-```kotlin
-plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
-}
-
-dependencies {
-    implementation(project(":core"))
-    implementation(project(":infra"))
-    implementation(project(":sdk"))
-    implementation(project(":plugins:telegram"))
-    
-    implementation("io.ktor:ktor-server-core-jvm:${property("ktorVersion")}")
-    implementation("io.ktor:ktor-client-core-jvm:${property("ktorVersion")}")
-    implementation("org.slf4j:slf4j-api:2.0.12")
-    implementation("ch.qos.logback:logback-classic:${property("logbackVersion")}")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${property("kotlinxSerializationVersion")}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${property("kotlinxCoroutinesVersion")}")
-    
-    testImplementation(kotlin("test"))
-}
-```
+2. **core/build.gradle.kts:**
+- Ensure `core` includes application dependencies used by orchestration (ktor client, slf4j, logback, coroutines).
 
 3. **Move files:**
-- Copy from `core/src/main/kotlin/com/chameleon/application/` → `application/`
-- Copy from `bootstrap/src/main/kotlin/com/chameleon/application/` → `application/`
-   - Remove old directories after successful build
+- Ensure all application services live in `core/src/main/kotlin/com/chameleon/application/`
+   - Remove application module once build succeeds
 
 4. **Update settings.gradle.kts:**
-```kotlin
-include(
-    "bootstrap",
-    "core",
-    "infra",
-    "sdk",
-    "application", // NEW
-    "plugins:telegram"
-)
-```
+- Remove `application` module include
 
 5. **Update bootstrap/build.gradle.kts:**
-```kotlin
-dependencies {
-    implementation(project(":core"))
-    implementation(project(":infra"))
-    implementation(project(":sdk"))
-    implementation(project(":application")) // NEW dependency
-    implementation(project(":plugins:telegram"))
-    // ... rest unchanged
-}
-```
+- Remove `application` dependency
 
 ---
 
@@ -195,7 +150,7 @@ Rename root package from `agent.platform` to `com.chameleon` and flatten hierarc
 mkdir -p core/src/main/kotlin/com/chameleon/{agent,session,memory,tool,plugin,identity,llm,channel,config}
 
 # Application layer
-mkdir -p application/src/main/kotlin/com/chameleon
+mkdir -p core/src/main/kotlin/com/chameleon/application
 
 # Infrastructure
 mkdir -p infra/src/main/kotlin/com/chameleon/{persistence,llm,tool,agent,memory,channel,plugin,config}
@@ -207,7 +162,7 @@ mkdir -p bootstrap/src/main/kotlin/com/chameleon
 mkdir -p sdk/src/main/kotlin/com/chameleon/sdk
 
 # Plugins
-mkdir -p plugins/telegram/src/main/kotlin/com/chameleon/plugin/telegram
+- Move built-in plugins into `infra/src/main/kotlin/com/chameleon/plugin/`
 ```
 
 2. **Copy all files to new locations**
@@ -246,9 +201,7 @@ include(
     "bootstrap"
     "core",
     "infra",
-    "sdk",
-    "application",
-    "plugins:telegram"
+    "sdk"
 )
 ```
 
@@ -306,7 +259,7 @@ After each phase, verify:
 ### Phase 1
 - `settings.gradle.kts`
 - `bootstrap/build.gradle.kts`
-- `application/build.gradle.kts` (new)
+- `core/build.gradle.kts`
 - All application service files
 
 ### Phase 2

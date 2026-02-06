@@ -4,6 +4,8 @@ import com.chameleon.session.domain.CompactionConfig
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.MessageRole
 import com.chameleon.session.domain.Session
+import com.chameleon.session.domain.SessionId
+import com.chameleon.session.domain.SessionKey
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

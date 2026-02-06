@@ -6,9 +6,8 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 
 - `bootstrap` - application entrypoint, server
 - `core` - domain layer (pure Kotlin)
-- `infra` - infrastructure adapters (config loader, persistence, memory index)
+- `infra` - infrastructure adapters (config loader, persistence, memory index, built-in plugins)
 - `sdk` - plugin SDK interfaces
-- `plugins/telegram` - built-in Telegram channel plugin
 - `extensions/` - external plugin drop-ins (created at runtime)
 
 ## Session Aggregate (DDD Core Domain)
@@ -86,13 +85,13 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `AgentLoopDomainEvents.kt` - Domain events (AgentLoopStarted, ToolExecuted, etc.)
 - `core/src/main/kotlin/com/chameleon/agent/port/DomainEventPublisherPort.kt` - Port for publishing domain events
 
-**Application Layer** (`application/src/main/kotlin/com/chameleon/application/`):
+**Application Layer** (`core/src/main/kotlin/com/chameleon/application/`):
 - `AgentRunService.kt` - Orchestrates run flow
 - `AgentTurnService.kt` - Orchestrates turns, persistence, and tool execution
 - `SessionAppService.kt` - Compaction orchestration
 - `ToolExecutionService.kt` - Policy + execution facade
-- `application/llm/LlmRequestBuilder.kt` - LLM request ACL for prompt construction
-- `application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
+- `core/src/main/kotlin/com/chameleon/application/LlmRequestBuilder.kt` - LLM request ACL for prompt construction
+- `core/src/main/kotlin/com/chameleon/application/MemoryContextAssembler.kt` - Builds memory context for prompts
 
 **Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/agent/`):
 - `DefaultAgentLoop.kt` - Adapter delegating to AgentRunService
@@ -269,7 +268,7 @@ MemoryConfig(
 - `core/src/main/kotlin/com/chameleon/memory/port/MemoryIndexRepositoryPort.kt` - Repository port interface
 
 **Application Layer**:
-- `application/src/main/kotlin/com/chameleon/application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
+- `core/src/main/kotlin/com/chameleon/application/MemoryContextAssembler.kt` - Builds memory context for prompts
 
 **Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/memory/`):
 - `SqliteMemoryIndexAdapter.kt` - SQLite FTS5 implementation
@@ -289,7 +288,7 @@ Memory search is composed in the application layer. The domain aggregate stays p
 
 The application layer implements use cases that orchestrate domain objects:
 
-Located in `application/src/main/kotlin/com/chameleon/application/`:
+Located in `core/src/main/kotlin/com/chameleon/application/`:
 
 - **`HandleInboundMessageUseCase`** (UC-001) - Routes channel messages through DDD agent runtime
   - Maps `InboundMessage` to `SessionKey`
@@ -444,10 +443,10 @@ Located in `core/src/main/kotlin/com/chameleon/plugins/domain/` - DDD aggregate 
   - `FileSystemPluginRepository` - JAR loading via URLClassLoader for external plugins
 
 #### 3. Plugin Implementation Layer
-Located in `plugins/` directory - concrete channel implementations:
+Located in `infra/` - concrete channel implementations:
 
 **Official Plugins** (compiled with application):
-- **Telegram Plugin** (`plugins/telegram/`)
+- **Telegram Plugin** (`infra/src/main/kotlin/com/chameleon/plugin/telegram/`)
   - Implements `ChannelPort` interface
   - Registered in `OfficialPluginRegistry` via `PluginFactory`
   - Uses Ktor HTTP client for Telegram Bot API

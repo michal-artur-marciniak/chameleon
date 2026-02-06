@@ -1,5 +1,7 @@
 package com.chameleon.llm
 
+import com.chameleon.llm.domain.ChatCompletionEvent
+import com.chameleon.llm.domain.ChatCompletionRequest
 import com.chameleon.llm.port.LlmProviderPort
 
 import io.ktor.client.HttpClient

@@ -6,8 +6,8 @@ import com.chameleon.application.AgentTurnService
 import com.chameleon.application.SessionAppService
 import com.chameleon.application.ToolExecutionService
 import com.chameleon.application.MemoryContextAssembler
-import com.chameleon.config.PlatformConfig
-import com.chameleon.llm.ModelRefResolver
+import com.chameleon.config.domain.PlatformConfig
+import com.chameleon.llm.domain.ModelRefResolver
 import com.chameleon.llm.OpenAiCompatProvider
 import com.chameleon.llm.ProviderRegistry
 import com.chameleon.memory.domain.MemoryIndex

@@ -1,7 +1,7 @@
 package com.chameleon.agent
 
 import com.chameleon.logging.LogWrapper
-import com.chameleon.config.PlatformConfig
+import com.chameleon.config.domain.PlatformConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

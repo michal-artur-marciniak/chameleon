@@ -1,12 +1,12 @@
 package com.chameleon.plugins
 
-import com.chameleon.config.PlatformConfig
-import com.chameleon.plugins.domain.PluginCapability
-import com.chameleon.plugins.domain.PluginFactory
-import com.chameleon.plugins.domain.PluginFactoryRegistry
-import com.chameleon.plugins.domain.PluginId
-import com.chameleon.plugins.domain.PluginType
-import com.chameleon.plugins.domain.PluginVersion
+import com.chameleon.config.domain.PlatformConfig
+import com.chameleon.plugin.domain.PluginCapability
+import com.chameleon.plugin.domain.PluginFactory
+import com.chameleon.plugin.domain.PluginFactoryRegistry
+import com.chameleon.plugin.domain.PluginId
+import com.chameleon.plugin.domain.PluginType
+import com.chameleon.plugin.domain.PluginVersion
 import com.chameleon.plugin.telegram.TelegramPlugin
 import com.chameleon.sdk.ChannelPort
 

@@ -1,7 +1,7 @@
 package com.chameleon.config
 
-import com.chameleon.config.LogFormat
-import com.chameleon.config.LogLevel
+import com.chameleon.config.domain.LogFormat
+import com.chameleon.config.domain.LogLevel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

@@ -1,6 +1,6 @@
 package com.chameleon.agent
 
-import com.chameleon.config.PlatformConfig
+import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.MessageRole
 import com.chameleon.session.domain.Session

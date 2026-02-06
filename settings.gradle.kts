@@ -21,7 +21,5 @@ include(
     "bootstrap",
     "core",
     "infra",
-    "sdk",
-    "application",
-    "plugins:telegram"
+    "sdk"
 )

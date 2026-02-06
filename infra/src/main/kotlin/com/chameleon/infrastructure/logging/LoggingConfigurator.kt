@@ -1,6 +1,6 @@
 package com.chameleon.logging
 
-import com.chameleon.config.LoggingConfig
+import com.chameleon.config.domain.LoggingConfig
 import org.slf4j.LoggerFactory
 
 /**

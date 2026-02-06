@@ -1,8 +1,8 @@
 package com.chameleon.plugins
 
-import com.chameleon.config.PlatformConfig
-import com.chameleon.plugins.domain.PluginId
-import com.chameleon.plugins.domain.PluginRepository
+import com.chameleon.config.domain.PlatformConfig
+import com.chameleon.plugin.domain.PluginId
+import com.chameleon.plugin.port.PluginRepository
 import com.chameleon.sdk.ChannelPort
 import com.chameleon.sdk.PluginManifest
 import kotlinx.serialization.json.Json
@@ -65,7 +65,7 @@ class FileSystemPluginRepository(
         return manifests
     }
     
-    override fun load(manifest: PluginManifest, config: Any?): ChannelPort? {
+    override fun load(manifest: PluginManifest, config: PlatformConfig): ChannelPort? {
         val pluginDir = extensionsDir.resolve(manifest.id)
         val jarPath = pluginDir.resolve("plugin.jar")
         
@@ -106,7 +106,7 @@ class FileSystemPluginRepository(
     private fun instantiatePlugin(
         manifest: PluginManifest, 
         jarPath: Path, 
-        config: Any?
+        config: PlatformConfig
     ): ChannelPort? {
         return try {
             val classLoader = URLClassLoader(
@@ -130,11 +130,7 @@ class FileSystemPluginRepository(
                 }
                 // Constructor with JsonObject
                 hasConstructor(pluginClass, JsonObject::class.java) -> {
-                    val configJson = when (config) {
-                        is PlatformConfig -> extractConfigJson(config)
-                        is JsonObject -> config
-                        else -> JsonObject(emptyMap())
-                    }
+                    val configJson = extractConfigJson(config)
                     pluginClass.getConstructor(JsonObject::class.java)
                         .newInstance(configJson)
                 }

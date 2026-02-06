@@ -1,6 +1,6 @@
 package com.chameleon.bootstrap
 
-import com.chameleon.config.PlatformConfig
+import com.chameleon.config.domain.PlatformConfig
 import java.nio.file.Path
 import org.slf4j.LoggerFactory
 
