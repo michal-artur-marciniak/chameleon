@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":application"))
     implementation(project(":sdk"))
     implementation(project(":plugins:telegram"))
     implementation("org.slf4j:slf4j-api:2.0.12")

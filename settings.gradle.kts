@@ -22,5 +22,6 @@ include(
     "core",
     "infra",
     "sdk",
+    "application",
     "plugins:telegram"
 )
