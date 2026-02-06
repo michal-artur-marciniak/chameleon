@@ -1,6 +1,8 @@
 package com.chameleon.bootstrap
 
 import com.chameleon.config.domain.PlatformConfig
+import com.chameleon.plugin.telegram.TelegramConfig
+import kotlinx.serialization.json.Json
 import java.nio.file.Path
 import org.slf4j.LoggerFactory
 
@@ -28,8 +30,9 @@ class StartupLogger {
      * @param envPath Path to the environment file
      */
     fun log(config: PlatformConfig, configPath: Path?, envPath: Path) {
-        val telegramEnabled = config.channels.telegram.enabled
-        val tokenPresent = !config.channels.telegram.token.isNullOrBlank()
+        val telegramConfig = resolveTelegramConfig(config)
+        val telegramEnabled = telegramConfig.enabled
+        val tokenPresent = !telegramConfig.token.isNullOrBlank()
         val defaultAgentId = config.agents.list.firstOrNull { it.default }?.id ?: "main"
         val configLog = configPath?.toAbsolutePath()?.toString() ?: "<not found>"
         logger.info("[app] config={}", configLog)
@@ -40,5 +43,11 @@ class StartupLogger {
         if (configPath == null) {
             logger.warn("[app] warning: config/config.json not found; using defaults")
         }
+    }
+
+    private fun resolveTelegramConfig(config: PlatformConfig): TelegramConfig {
+        val json = Json { ignoreUnknownKeys = true }
+        val raw = config.channels.get("telegram") ?: return TelegramConfig()
+        return json.decodeFromJsonElement(TelegramConfig.serializer(), raw)
     }
 }

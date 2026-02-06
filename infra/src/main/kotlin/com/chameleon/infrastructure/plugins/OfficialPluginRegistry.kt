@@ -7,8 +7,10 @@ import com.chameleon.plugin.domain.PluginFactoryRegistry
 import com.chameleon.plugin.domain.PluginId
 import com.chameleon.plugin.domain.PluginType
 import com.chameleon.plugin.domain.PluginVersion
+import com.chameleon.plugin.telegram.TelegramConfig
 import com.chameleon.plugin.telegram.TelegramPlugin
 import com.chameleon.sdk.ChannelPort
+import kotlinx.serialization.json.Json
 
 /**
  * Registry for official (built-in) plugins.
@@ -45,24 +47,30 @@ class OfficialPluginRegistry : PluginFactoryRegistry {
         )
         
         override fun isEnabled(config: PlatformConfig): Boolean {
-            return config.channels.telegram.enabled && 
-                   !config.channels.telegram.token.isNullOrBlank()
+            val telegramConfig = resolveTelegramConfig(config)
+            return telegramConfig.enabled && !telegramConfig.token.isNullOrBlank()
         }
         
         override fun create(config: PlatformConfig): ChannelPort? {
-            val telegramConfig = config.channels.telegram
+            val telegramConfig = resolveTelegramConfig(config)
             if (!telegramConfig.enabled) return null
-            
+
             val token = telegramConfig.token
             if (token.isNullOrBlank()) {
                 println("[plugin-registry] telegram: enabled but token missing")
                 return null
             }
-            
+
             return TelegramPlugin(
                 token = token,
                 requireMentionInGroups = telegramConfig.requireMention
             )
         }
+    }
+
+    private fun resolveTelegramConfig(config: PlatformConfig): TelegramConfig {
+        val json = Json { ignoreUnknownKeys = true }
+        val raw = config.channels.get("telegram") ?: return TelegramConfig()
+        return json.decodeFromJsonElement(TelegramConfig.serializer(), raw)
     }
 }

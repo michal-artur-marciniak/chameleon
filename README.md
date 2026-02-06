@@ -391,13 +391,15 @@ Environment variables are expanded with `${VAR_NAME}` syntax. Missing variables 
     "allow": ["read", "write", "edit", "exec", "memory_search", "memory_get"]
   },
   "channels": {
-    "telegram": {
-      "enabled": true,
-      "token": "${TELEGRAM_TOKEN}",
-      "mode": "polling",
-      "requireMention": true,
-      "allowedUsers": [],
-      "allowedGroups": []
+    "entries": {
+      "telegram": {
+        "enabled": true,
+        "token": "${TELEGRAM_TOKEN}",
+        "mode": "polling",
+        "requireMention": true,
+        "allowedUsers": [],
+        "allowedGroups": []
+      }
     }
   },
   "gateway": { "host": "0.0.0.0", "port": 18789 }
@@ -410,7 +412,7 @@ Environment variables are expanded with `${VAR_NAME}` syntax. Missing variables 
 - **agents.defaults**: global defaults (workspace, compaction, thinking/verbose)
 - **messages**: history limits + queue mode
 - **tools.exec**: exec security & allowlist
-- **channels.telegram**: token, mention requirements, allowlists
+- **channels.entries.telegram**: token, mention requirements, allowlists
 
 ## Plugin System Architecture
 
@@ -469,7 +471,7 @@ Located in `infra/` - concrete channel implementations:
 **External Plugins** (loaded from filesystem):
 - Drop JAR + `plugin.json` into `extensions/<name>/`
 - Auto-discovered and loaded via `FileSystemPluginRepository`
-- Constructor injection: `(PluginManifest)`, `(PlatformConfig)`, `(JsonObject)`, or no-args
+- Constructor injection: `(PluginManifest)`, `(PlatformConfig)`, `(JsonObject)`, or no-args (channel entries via `config.channels.entries`)
 - Official plugins take precedence (external skipped if ID conflicts)
 
 #### 4. Bootstrap Layer (Orchestration)

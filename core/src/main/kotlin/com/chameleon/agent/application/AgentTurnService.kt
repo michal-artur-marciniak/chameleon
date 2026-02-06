@@ -6,7 +6,7 @@ import com.chameleon.agent.domain.AgentLoop
 import com.chameleon.agent.domain.AgentLoopDomainEvent
 import com.chameleon.agent.port.DomainEventPublisherPort
 import com.chameleon.agent.domain.TurnEvent
-import com.chameleon.config.domain.PlatformConfig
+import com.chameleon.agent.domain.AgentsConfig
 import com.chameleon.llm.application.LlmRequestBuilder
 import com.chameleon.llm.domain.ModelRef
 import com.chameleon.llm.domain.ModelRefResolutionError
@@ -39,7 +39,7 @@ import java.util.UUID
  * 4. Persist messages and publish domain events
  * 5. Trigger session compaction if needed
  *
- * @property config Platform configuration for agents and models
+ * @property agentsConfig Agent configuration for model defaults
  * @property sessionManager Manages session locking
  * @property sessionRepository Persists session messages
  * @property sessionAppService Handles session compaction
@@ -53,7 +53,7 @@ import java.util.UUID
  * @property memoryContextAssembler Optional assembler for injecting memory context
  */
 class AgentTurnService(
-    private val config: PlatformConfig,
+    private val agentsConfig: AgentsConfig,
     private val sessionManager: SessionManager,
     private val sessionRepository: SessionRepository,
     private val sessionAppService: SessionAppService,
@@ -173,8 +173,8 @@ class AgentTurnService(
      * @throws IllegalStateException if the model reference cannot be resolved
      */
     private fun resolveModel(agentId: String): ModelRef {
-        val defaultModel = config.agents.defaults.model.primary
-        val agent = config.agents.list.firstOrNull { it.id == agentId }
+        val defaultModel = agentsConfig.defaults.model.primary
+        val agent = agentsConfig.list.firstOrNull { it.id == agentId }
         val modelRef = agent?.model?.primary ?: defaultModel
         val resolution = modelRefResolver.resolve(modelRef)
         return resolution.modelRef ?: throw IllegalStateException(formatModelRefError(modelRef, resolution.error))

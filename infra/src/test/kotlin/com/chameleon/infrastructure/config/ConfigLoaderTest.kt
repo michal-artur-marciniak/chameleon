@@ -2,6 +2,8 @@ package com.chameleon.infrastructure.config
 
 import com.chameleon.config.domain.LogFormat
 import com.chameleon.config.domain.LogLevel
+import com.chameleon.plugin.telegram.TelegramConfig
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -31,10 +33,12 @@ class ConfigLoaderTest {
                 }
               },
               "channels": {
-                "telegram": {
-                  "enabled": false,
-                  "token": null,
-                  "mode": "polling"
+                "entries": {
+                  "telegram": {
+                    "enabled": false,
+                    "token": null,
+                    "mode": "polling"
+                  }
                 }
               }
             }
@@ -73,10 +77,12 @@ class ConfigLoaderTest {
                 }
               },
               "channels": {
-                "telegram": {
-                  "enabled": true,
-                  "token": "${'$'}{TELEGRAM_TOKEN}",
-                  "mode": "polling"
+                "entries": {
+                  "telegram": {
+                    "enabled": true,
+                    "token": "${'$'}{TELEGRAM_TOKEN}",
+                    "mode": "polling"
+                  }
                 }
               }
             }
@@ -88,7 +94,8 @@ class ConfigLoaderTest {
 
         assertNotNull(loaded.config.models.providers["kimi"])
         assertEquals("test-key", loaded.config.models.providers["kimi"]?.apiKey)
-        assertEquals("test-token", loaded.config.channels.telegram.token)
+        val telegramConfig = parseTelegramConfig(loaded.config)
+        assertEquals("test-token", telegramConfig.token)
     }
 
     @Test
@@ -119,10 +126,12 @@ class ConfigLoaderTest {
                 }
               },
               "channels": {
-                "telegram": {
-                  "enabled": true,
-                  "token": "${'$'}{TELEGRAM_TOKEN}",
-                  "mode": "polling"
+                "entries": {
+                  "telegram": {
+                    "enabled": true,
+                    "token": "${'$'}{TELEGRAM_TOKEN}",
+                    "mode": "polling"
+                  }
                 }
               },
               "logging": {
@@ -174,10 +183,12 @@ class ConfigLoaderTest {
                 }
               },
               "channels": {
-                "telegram": {
-                  "enabled": true,
-                  "token": "${'$'}{TELEGRAM_TOKEN}",
-                  "mode": "polling"
+                "entries": {
+                  "telegram": {
+                    "enabled": true,
+                    "token": "${'$'}{TELEGRAM_TOKEN}",
+                    "mode": "polling"
+                  }
                 }
               }
             }
@@ -199,5 +210,11 @@ class ConfigLoaderTest {
         val path = dir.resolve("config.json")
         java.nio.file.Files.writeString(path, content)
         return path
+    }
+
+    private fun parseTelegramConfig(config: com.chameleon.config.domain.PlatformConfig): TelegramConfig {
+        val json = Json { ignoreUnknownKeys = true }
+        val raw = config.channels.get("telegram") ?: return TelegramConfig()
+        return json.decodeFromJsonElement(TelegramConfig.serializer(), raw)
     }
 }

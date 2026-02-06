@@ -75,13 +75,15 @@
     "port": 18789
   },
   "channels": {
-    "telegram": {
-      "enabled": true,
-      "token": "${TELEGRAM_TOKEN}",
-      "mode": "polling",
-      "requireMention": true,
-      "allowedUsers": [],
-      "allowedGroups": []
+    "entries": {
+      "telegram": {
+        "enabled": true,
+        "token": "${TELEGRAM_TOKEN}",
+        "mode": "polling",
+        "requireMention": true,
+        "allowedUsers": [],
+        "allowedGroups": []
+      }
     }
   }
 }

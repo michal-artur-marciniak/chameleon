@@ -62,7 +62,7 @@ object AgentRuntimeFactory {
         val registry = buildProviders(config)
         val resolver = ModelRefResolver(registry)
         val turnService = AgentTurnService(
-            config = config,
+            agentsConfig = config.agents,
             sessionManager = sessionManager,
             sessionRepository = sessionRepo,
             sessionAppService = sessionAppService,

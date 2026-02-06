@@ -44,7 +44,7 @@ PluginService manages plugins through the domain:
 
 ## Dependencies
 
-- **Config** - `PlatformConfig` for all configuration values
+- **Config** - `PlatformConfig` for shared configuration values
 - **Application** - `HandleInboundMessageUseCase` for message routing
 - **Domain** - `PluginManager` aggregate for plugin lifecycle
 - **Infra** - `AgentRuntimeFactory`, `ConfigLoader`, `LoggingConfigurator`
