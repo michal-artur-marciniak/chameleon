@@ -11,7 +11,11 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Policy evaluator that checks tool existence and applies ToolPolicyService rules.
+ * Policy evaluator adapter bridging [ToolPolicyService] with [ToolDefinitionRegistry].
+ *
+ * Validates:
+ * - Tool is registered in the definition registry
+ * - Tool call complies with policy rules (especially for exec tool)
  */
 class ToolPolicyEvaluatorAdapter(
     private val toolRegistry: ToolDefinitionRegistry,

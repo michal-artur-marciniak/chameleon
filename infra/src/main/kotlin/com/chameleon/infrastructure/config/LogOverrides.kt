@@ -1,5 +1,11 @@
 package com.chameleon.config
 
+/**
+ * Individual logging configuration overrides.
+ *
+ * All fields are nullable to represent "not specified" state,
+ * allowing merge semantics with other sources.
+ */
 data class LogOverrides(
     val level: String? = null,
     val format: String? = null,
@@ -7,6 +13,12 @@ data class LogOverrides(
     val stacktrace: Boolean? = null
 )
 
+/**
+ * Aggregates logging overrides from multiple sources.
+ *
+ * Merges config file, environment variables, and CLI arguments
+ * with priority: CLI > env > config.
+ */
 data class LoggingOverrides(
     val config: LogOverrides = LogOverrides(),
     val env: LogOverrides = LogOverrides(),
@@ -21,6 +33,9 @@ data class LoggingOverrides(
     }
 }
 
+/**
+ * Final resolved logging configuration after merging all sources.
+ */
 data class ResolvedLogging(
     val level: String?,
     val format: String?,

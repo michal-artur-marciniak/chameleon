@@ -3,6 +3,12 @@ package com.chameleon.logging
 import com.chameleon.config.LoggingConfig
 import org.slf4j.LoggerFactory
 
+/**
+ * Applies logging configuration to system properties.
+ *
+ * Sets LOG_LEVEL, LOG_FORMAT, and LOG_STACKTRACE properties
+ * that are consumed by the logging framework.
+ */
 object LoggingConfigurator {
     fun apply(config: LoggingConfig) {
         setProperty("LOG_LEVEL", config.level.name)

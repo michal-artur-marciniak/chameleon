@@ -3,6 +3,11 @@ package com.chameleon.persistence
 import com.chameleon.session.domain.SessionMetadata
 import kotlinx.serialization.Serializable
 
+/**
+ * Index entry for a session stored in the sessions.json index file.
+ *
+ * Contains metadata for fast listing without loading full message history.
+ */
 @Serializable
 data class SessionIndexEntry(
     val sessionId: String,

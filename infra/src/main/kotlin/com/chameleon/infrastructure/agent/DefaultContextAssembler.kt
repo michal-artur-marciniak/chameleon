@@ -10,6 +10,15 @@ import java.nio.file.Path
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/**
+ * Assembles the complete context for an agent run.
+ *
+ * Builds system prompts by combining:
+ * - Bootstrap files from workspace (AGENTS.md, TOOLS.md, etc.)
+ * - Tool schemas in JSON format
+ * - Session message history
+ * - Runtime metadata (workspace path, current time)
+ */
 class DefaultContextAssembler(
     private val config: PlatformConfig
 ) : ContextAssembler {
@@ -24,6 +33,16 @@ class DefaultContextAssembler(
         "BOOTSTRAP.md"
     )
 
+    /**
+     * Builds the complete context bundle for a session.
+     *
+     * Injects bootstrap files (up to 20K chars each) and tool schemas
+     * into the system prompt.
+     *
+     * @param session The session containing message history
+     * @param tools Tool registry for schema injection
+     * @return Complete context bundle with system prompt and messages
+     */
     override fun build(session: Session, tools: ToolDefinitionRegistry): ContextBundle {
         val injected = mutableListOf<InjectedFileReport>()
         val projectContext = StringBuilder()

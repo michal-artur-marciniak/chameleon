@@ -18,6 +18,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/**
+ * OpenAI-compatible LLM provider implementation.
+ *
+ * Supports any API that implements the OpenAI chat completions protocol.
+ * Uses Ktor HTTP client for async requests.
+ */
 class OpenAiCompatProvider(
     private val baseUrl: String,
     private val apiKey: String?,

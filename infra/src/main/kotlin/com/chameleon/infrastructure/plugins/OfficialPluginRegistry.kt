@@ -11,7 +11,10 @@ import com.chameleon.plugin.telegram.TelegramPlugin
 import com.chameleon.sdk.ChannelPort
 
 /**
- * Registry for official (built-in) plugins
+ * Registry for official (built-in) plugins.
+ *
+ * Currently registers:
+ * - Telegram plugin (when token is configured)
  */
 class OfficialPluginRegistry : PluginFactoryRegistry {
     

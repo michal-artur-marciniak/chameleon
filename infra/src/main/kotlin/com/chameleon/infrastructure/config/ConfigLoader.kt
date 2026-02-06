@@ -7,18 +7,43 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
+/**
+ * Loads platform configuration from JSON files with environment variable expansion.
+ *
+ * Supports:
+ * - Auto-discovery of config/config.json (searches upward from working directory)
+ * - Explicit config path via --config= CLI argument
+ * - .env file loading for environment variables
+ * - ${ENV_VAR} syntax for environment variable substitution in config
+ * - Logging overrides from CLI args, env vars, and config
+ */
 class ConfigLoader(
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) {
+    /**
+     * Loads configuration with auto-discovery.
+     */
     fun load(): LoadedConfig {
         return load(ConfigPath.Auto, emptyMap(), emptyList())
     }
 
+    /**
+     * Loads configuration with CLI argument parsing for config path.
+     */
     fun load(cliArgs: List<String>): LoadedConfig {
         val resolved = resolveConfigPathFromCli(cliArgs) ?: ConfigPath.Auto
         return load(resolved, emptyMap(), cliArgs)
     }
 
+    /**
+     * Loads configuration with full control over sources.
+     *
+     * Priority (highest to lowest): CLI args → env vars → config file → defaults
+     *
+     * @param configPath Path resolution strategy (auto or explicit)
+     * @param envOverrides Additional environment variable overrides
+     * @param cliArgs CLI arguments for logging overrides and config path
+     */
     fun load(
         configPath: ConfigPath = ConfigPath.Auto,
         envOverrides: Map<String, String> = emptyMap(),
@@ -167,6 +192,13 @@ class ConfigLoader(
     }
 }
 
+/**
+ * Result of loading configuration.
+ *
+ * @property config The effective platform configuration
+ * @property configPath Path to the loaded config file (null if using defaults)
+ * @property envPath Path to the loaded .env file
+ */
 data class LoadedConfig(
     val config: PlatformConfig,
     val configPath: Path?,

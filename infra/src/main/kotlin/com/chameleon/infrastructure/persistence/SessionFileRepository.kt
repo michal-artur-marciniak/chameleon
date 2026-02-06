@@ -14,6 +14,15 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 
+/**
+ * File-based implementation of [SessionRepository] using JSONL format.
+ *
+ * Storage layout:
+ * - sessions/sessions.json: Index file mapping session IDs to metadata
+ * - sessions/{sessionId}.jsonl: Message logs in JSONL format
+ *
+ * Thread-safe via synchronized blocks on file operations.
+ */
 class SessionFileRepository(
     private val workspaceDir: Path,
     private val json: Json = Json {

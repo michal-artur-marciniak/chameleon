@@ -15,13 +15,17 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Repository for loading external plugins from filesystem
- * 
+ * Repository for loading external plugins from filesystem.
+ *
  * Expects structure:
- *   extensions/
- *     my-plugin/
- *       plugin.json   (manifest)
- *       plugin.jar    (implementation JAR)
+ * ```
+ * extensions/
+ *   my-plugin/
+ *     plugin.json   (manifest)
+ *     plugin.jar    (implementation JAR)
+ * ```
+ *
+ * Supports constructor injection of PluginManifest, PlatformConfig, or JsonObject.
  */
 class FileSystemPluginRepository(
     private val extensionsDir: Path,

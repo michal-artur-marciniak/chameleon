@@ -8,6 +8,12 @@ import com.chameleon.session.port.SessionManager
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+/**
+ * Default implementation of [SessionManager] with per-session locking.
+ *
+ * Ensures thread-safe access to sessions using a mutex-per-key strategy.
+ * Automatically creates sessions on demand.
+ */
 class DefaultSessionManager(
     private val repository: SessionFileRepository
 ) : SessionManager {

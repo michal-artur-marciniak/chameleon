@@ -12,6 +12,11 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Tool executor that dispatches to built-in tool handlers.
+ *
+ * Currently implements stub handlers for:
+ * - read, write, edit: File operations (not yet implemented)
+ * - exec: Command execution (stubbed)
+ * - memory_search, memory_get: Memory operations (not yet implemented)
  */
 class ToolExecutorAdapter(
     private val toolRegistry: ToolDefinitionRegistry,

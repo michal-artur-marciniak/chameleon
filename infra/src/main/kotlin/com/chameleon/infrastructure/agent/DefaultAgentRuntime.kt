@@ -16,6 +16,15 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Default implementation of [AgentRuntime] managing concurrent agent runs.
+ *
+ * Handles:
+ * - Run lifecycle management (start, wait, complete)
+ * - Event streaming via Kotlin Flow
+ * - Timeout handling for synchronous waits
+ * - Error handling and status tracking
+ */
 class DefaultAgentRuntime(
     private val config: PlatformConfig,
     private val loop: AgentLoop
@@ -25,6 +34,12 @@ class DefaultAgentRuntime(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val runs = ConcurrentHashMap<RunId, RunState>()
 
+    /**
+     * Starts a new agent run asynchronously.
+     *
+     * @param request The run request containing session and execution parameters
+     * @return Handle to the started run with event flow
+     */
     override fun start(request: AgentRunRequest): AgentRunHandle {
         val runId = RunId(UUID.randomUUID().toString())
         val acceptedAt = Instant.now()
@@ -52,6 +67,12 @@ class DefaultAgentRuntime(
         return AgentRunHandle(runId, acceptedAt, events.receiveAsFlow())
     }
 
+    /**
+     * Waits for a run to complete with optional timeout.
+     *
+     * @param request Wait request containing run ID and timeout
+     * @return Result of the run (success, error, or timeout)
+     */
     override suspend fun wait(request: AgentWaitRequest): AgentRunResult {
         val state = runs[request.runId] ?: return AgentRunResult(
             runId = request.runId,

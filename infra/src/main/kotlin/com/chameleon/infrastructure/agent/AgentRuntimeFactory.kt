@@ -21,7 +21,24 @@ import com.chameleon.tool.ToolPolicyEvaluatorAdapter
 import java.nio.file.Files
 import java.nio.file.Paths
 
+/**
+ * Factory for creating [AgentRuntime] instances with all dependencies wired.
+ *
+ * This factory creates a fully-configured agent runtime including:
+ * - Session persistence and management
+ * - Tool definition registry and execution
+ * - LLM provider registry
+ * - Memory indexing and search
+ * - Domain event publishing
+ */
 object AgentRuntimeFactory {
+    /**
+     * Creates a new [AgentRuntime] with the given configuration.
+     *
+     * @param config Platform configuration including model providers, workspace paths
+     * @param eventPublisher Optional domain event publisher for observability (null = no events)
+     * @return Fully configured [AgentRuntime] ready to start agent runs
+     */
     fun create(
         config: PlatformConfig,
         eventPublisher: DomainEventPublisherPort? = null
@@ -64,6 +81,9 @@ object AgentRuntimeFactory {
         return DefaultAgentRuntime(config, loop)
     }
 
+    /**
+     * Builds a [ProviderRegistry] from the configured model providers.
+     */
     private fun buildProviders(config: PlatformConfig): ProviderRegistry {
         val providers = config.models.providers.mapValues { (_, providerConfig) ->
             OpenAiCompatProvider(
@@ -75,6 +95,9 @@ object AgentRuntimeFactory {
         return ProviderRegistry(providers)
     }
 
+    /**
+     * Creates a [MemoryIndex] backed by SQLite in the workspace data directory.
+     */
     private fun createMemoryIndex(config: PlatformConfig): MemoryIndex {
         val dataDir = Paths.get(config.agents.defaults.workspace).resolve("data")
         Files.createDirectories(dataDir)
