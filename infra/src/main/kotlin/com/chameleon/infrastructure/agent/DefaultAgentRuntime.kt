@@ -1,7 +1,7 @@
 package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoop
+import com.chameleon.agent.AgentLoopPort
 import com.chameleon.agent.AgentRunHandle
 import com.chameleon.agent.AgentRunRequest
 import com.chameleon.agent.AgentRunResult
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class DefaultAgentRuntime(
     private val config: PlatformConfig,
-    private val loop: AgentLoop
+    private val loop: AgentLoopPort
 ) : AgentRuntime {
     private val logger = LoggerFactory.getLogger(DefaultAgentRuntime::class.java)
     private val stacktrace = config.logging.stacktrace

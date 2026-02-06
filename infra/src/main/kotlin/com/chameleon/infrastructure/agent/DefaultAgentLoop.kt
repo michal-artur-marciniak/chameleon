@@ -1,7 +1,7 @@
 package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoop
+import com.chameleon.agent.AgentLoopPort
 import com.chameleon.agent.AgentRunRequest
 import com.chameleon.agent.application.AgentRunService
 import com.chameleon.config.domain.PlatformConfig
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 class DefaultAgentLoop(
     private val config: PlatformConfig,
     private val service: AgentRunService
-) : AgentLoop {
+) : AgentLoopPort {
     private val logger = LoggerFactory.getLogger(DefaultAgentLoop::class.java)
     private val stacktrace = config.logging.stacktrace
 

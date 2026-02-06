@@ -2,7 +2,7 @@
 
 ## Domain Aggregate Pattern
 
-The AgentLoop aggregate lives in `domain/AgentLoop.kt` and owns the decision logic for a single turn.
+The agent loop aggregate owns the decision logic for a single turn.
 
 ### Key Patterns
 
@@ -44,7 +44,7 @@ val toolDef = toolRegistry.get(event.name)
 3. Invokes the domain aggregate
 4. Maps TurnEvents to AgentEvents
 
-`DefaultAgentLoop` (infra) delegates to `AgentRunService`, which wraps `AgentTurnService`.
+`DefaultAgentLoop` (infra) delegates to `AgentRunService`, which wraps `AgentTurnService` via `AgentLoopPort`.
 
 ## File Organization
 
@@ -53,7 +53,7 @@ val toolDef = toolRegistry.get(event.name)
 - `infra/src/main/kotlin/com/chameleon/infrastructure/agent/` - Infrastructure adapters (DefaultAgentLoop, etc.)
 - `bootstrap/src/main/kotlin/com/chameleon/` - Bootstrap wiring and entrypoint
 
-## When Modifying AgentLoop
+## When Modifying Agent Loop Aggregate
 
 1. Business logic belongs in the domain aggregate
 2. Orchestration and provider resolution live in AgentTurnService

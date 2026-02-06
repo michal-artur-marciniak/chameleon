@@ -1,21 +1,21 @@
 package com.chameleon.agent.application
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoop
+import com.chameleon.agent.AgentLoopPort
 import com.chameleon.agent.AgentRunRequest
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Service that delegates agent runs to [AgentTurnService].
  *
- * Implements [AgentLoop] to provide a simple entry point for starting agent runs
+ * Implements [AgentLoopPort] to provide a simple entry point for starting agent runs
  * while the actual turn-by-turn logic is handled by the underlying service.
  *
  * @property agentTurnService The service that handles the actual agent turn execution
  */
 class AgentRunService(
     private val agentTurnService: AgentTurnService
-) : AgentLoop {
+) : AgentLoopPort {
 
     /**
      * Delegates the agent run to [agentTurnService].

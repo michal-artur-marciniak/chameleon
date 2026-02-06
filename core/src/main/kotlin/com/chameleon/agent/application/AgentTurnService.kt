@@ -1,13 +1,13 @@
 package com.chameleon.agent.application
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoop
+import com.chameleon.agent.AgentLoopPort
 import com.chameleon.agent.AgentRunRequest
 import com.chameleon.agent.ContextAssembler
 import com.chameleon.agent.RunId
 import com.chameleon.agent.ContextBundle
 import com.chameleon.agent.ToolPhase
-import com.chameleon.agent.domain.AgentLoop as AgentLoopAggregate
+import com.chameleon.agent.domain.AgentLoop
 import com.chameleon.agent.domain.AgentLoopDomainEvent
 import com.chameleon.agent.port.DomainEventPublisherPort
 import com.chameleon.agent.domain.TurnEvent
@@ -70,7 +70,7 @@ class AgentTurnService(
     private val eventPublisher: DomainEventPublisherPort? = null,
     private val llmRequestBuilder: LlmRequestBuilder = LlmRequestBuilder(),
     private val memoryContextAssembler: MemoryContextAssembler? = null
-) : AgentLoop {
+) : AgentLoopPort {
     /**
      * Executes a single agent turn.
      *
@@ -88,7 +88,7 @@ class AgentTurnService(
 
         sessionManager.withSessionLock(request.sessionKey) { session ->
             val contextState = buildTurnContext(session, request)
-            val deps = AgentLoopAggregate.TurnDependencies(toolRegistry = toolDefinitionRegistry)
+            val deps = AgentLoop.TurnDependencies(toolRegistry = toolDefinitionRegistry)
 
             val requestPlan = llmRequestBuilder.build(
                 context = contextState.context,
@@ -104,7 +104,7 @@ class AgentTurnService(
             )
 
             val startTime = Instant.now()
-            var turnPlan: AgentLoopAggregate.TurnPlan? = null
+            var turnPlan: AgentLoop.TurnPlan? = null
 
             contextState.agentLoop
                 .processCompletion(runId, contextState.llmProvider.stream(requestPlan.request), deps)
@@ -205,7 +205,7 @@ class AgentTurnService(
     }
 
     private data class TurnContext(
-        val agentLoop: AgentLoopAggregate,
+        val agentLoop: AgentLoop,
         val session: Session,
         val sessionWithMessage: Session,
         val context: ContextBundle,
@@ -226,7 +226,7 @@ class AgentTurnService(
         session: Session,
         request: AgentRunRequest
     ): TurnContext {
-        val agentLoop = AgentLoopAggregate.create(request.agentId)
+        val agentLoop = AgentLoop.create(request.agentId)
         val userMessage = Message(MessageRole.USER, request.inbound.text)
         val (sessionWithMessage, messageAddedEvent) = session.withMessage(userMessage)
         val context = contextAssembler.build(sessionWithMessage, toolDefinitionRegistry)
@@ -277,7 +277,7 @@ class AgentTurnService(
     private fun persistAssistantResponse(
         contextState: TurnContext,
         runId: RunId,
-        plan: AgentLoopAggregate.TurnPlan
+        plan: AgentLoop.TurnPlan
     ) {
         if (plan.assistantText.isBlank()) return
 

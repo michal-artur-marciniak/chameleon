@@ -9,7 +9,7 @@ interface AgentRuntime {
     suspend fun wait(request: AgentWaitRequest): AgentRunResult
 }
 
-interface AgentLoop {
+interface AgentLoopPort {
     fun run(request: AgentRunRequest): Flow<AgentEvent>
 }
 

@@ -36,7 +36,7 @@ class MemorySearchService(
 
     /**
      * Searches for context relevant to a user query.
-     * This is the primary method used by AgentLoop to fetch memory context.
+     * This is the primary method used by AgentTurnService to fetch memory context.
      * 
      * @param memoryIndex The memory index aggregate
      * @param userQuery The user's query or message

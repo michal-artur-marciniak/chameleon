@@ -117,7 +117,7 @@ MemoryConfig(
 4. Ensure FTS triggers stay in sync with schema changes
 5. Test with large files and edge cases
 
-## Integration with AgentLoop
+## Integration with AgentTurnService
 
 Memory search is composed in the application layer. The domain aggregate stays pure;
 memory context is injected when building the LLM request:

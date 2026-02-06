@@ -104,7 +104,7 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `LoggingDomainEventPublisher.kt` - Default domain event logging
 
 **Contracts** (`core/src/main/kotlin/com/chameleon/agent/`):
-- `AgentContracts.kt` - Runtime and loop interfaces
+- `AgentContracts.kt` - Runtime and loop port interfaces (AgentLoopPort)
 - `AgentEvents.kt` - Event types (AssistantDelta, ToolEvent, etc.)
 - `AgentModels.kt` - RunRequest, RunHandle, RunResult
 
