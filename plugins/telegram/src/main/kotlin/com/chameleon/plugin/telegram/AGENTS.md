@@ -4,7 +4,7 @@ Telegram Bot API channel integration for bidirectional messaging.
 
 ## Purpose
 
-Provides a [ChannelPort](../../../../../sdk/src/main/kotlin/com/chameleon/sdk/ChannelPort.kt) implementation that connects the application to Telegram via the Bot API. Supports both private chats and group conversations with mention-based filtering.
+Provides a [ChannelPort](../../../../../../sdk/src/main/kotlin/com/chameleon/sdk/ChannelPort.kt) implementation that connects the application to Telegram via the Bot API. Supports both private chats and group conversations with mention-based filtering.
 
 ## Key Capabilities
 
