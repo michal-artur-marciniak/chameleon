@@ -1,9 +1,8 @@
 package com.chameleon.agent.application
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoopPort
+import com.chameleon.agent.port.AgentLoopPort
 import com.chameleon.agent.AgentRunRequest
-import com.chameleon.agent.ContextAssembler
 import com.chameleon.agent.RunId
 import com.chameleon.agent.ContextBundle
 import com.chameleon.agent.ToolPhase

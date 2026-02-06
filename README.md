@@ -103,8 +103,12 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `DefaultAgentRuntime.kt` - Runtime lifecycle management
 - `LoggingDomainEventPublisher.kt` - Default domain event logging
 
-**Contracts** (`core/src/main/kotlin/com/chameleon/agent/`):
-- `AgentContracts.kt` - Runtime and loop port interfaces (AgentLoopPort)
+**Contracts** (`core/src/main/kotlin/com/chameleon/agent/port/`):
+- `AgentRuntimePort.kt` - Runtime port
+- `AgentLoopPort.kt` - Loop port
+**Application Contracts** (`core/src/main/kotlin/com/chameleon/agent/application/`):
+- `ContextAssembler.kt` - Builds context bundles for turns
+**Models & Events** (`core/src/main/kotlin/com/chameleon/agent/`):
 - `AgentEvents.kt` - Event types (AssistantDelta, ToolEvent, etc.)
 - `AgentModels.kt` - RunRequest, RunHandle, RunResult
 

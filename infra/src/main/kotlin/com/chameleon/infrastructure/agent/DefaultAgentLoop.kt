@@ -1,7 +1,7 @@
 package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoopPort
+import com.chameleon.agent.port.AgentLoopPort
 import com.chameleon.agent.AgentRunRequest
 import com.chameleon.agent.application.AgentRunService
 import com.chameleon.config.domain.PlatformConfig

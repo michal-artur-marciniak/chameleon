@@ -2,7 +2,7 @@ package com.chameleon.agent.application
 
 import com.chameleon.agent.AgentEvent
 import com.chameleon.agent.AgentRunRequest
-import com.chameleon.agent.AgentRuntime
+import com.chameleon.agent.port.AgentRuntimePort
 import com.chameleon.agent.Phase
 import com.chameleon.session.domain.SessionKey
 import com.chameleon.sdk.ChannelPort
@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
  *
  * Responsibilities:
  * - Maps inbound messages to SessionKeys
- * - Starts agent runs via the AgentRuntime
+ * - Starts agent runs via the AgentRuntimePort
  * - Streams lifecycle and assistant events
  * - Handles response buffering and outbound message delivery
  *
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
  * @property agentRuntime The runtime for starting agent runs
  */
 class HandleInboundMessageUseCase(
-    private val agentRuntime: AgentRuntime
+    private val agentRuntime: AgentRuntimePort
 ) {
     private val logger = LoggerFactory.getLogger(HandleInboundMessageUseCase::class.java)
     

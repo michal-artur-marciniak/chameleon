@@ -1,6 +1,6 @@
 package com.chameleon.infrastructure.agent
 
-import com.chameleon.agent.AgentRuntime
+import com.chameleon.agent.port.AgentRuntimePort
 import com.chameleon.agent.port.DomainEventPublisherPort
 import com.chameleon.agent.application.AgentRunService
 import com.chameleon.agent.application.AgentTurnService
@@ -23,7 +23,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 /**
- * Factory for creating [AgentRuntime] instances with all dependencies wired.
+ * Factory for creating [AgentRuntimePort] instances with all dependencies wired.
  *
  * This factory creates a fully-configured agent runtime including:
  * - Session persistence and management
@@ -34,16 +34,16 @@ import java.nio.file.Paths
  */
 object AgentRuntimeFactory {
     /**
-     * Creates a new [AgentRuntime] with the given configuration.
+     * Creates a new [AgentRuntimePort] with the given configuration.
      *
      * @param config Platform configuration including model providers, workspace paths
      * @param eventPublisher Optional domain event publisher for observability (null = no events)
-     * @return Fully configured [AgentRuntime] ready to start agent runs
+     * @return Fully configured [AgentRuntimePort] ready to start agent runs
      */
     fun create(
         config: PlatformConfig,
         eventPublisher: DomainEventPublisherPort? = null
-    ): AgentRuntime {
+    ): AgentRuntimePort {
         val sessionRepo = SessionFileRepository(Paths.get(config.agents.defaults.workspace))
         val sessionManager = DefaultSessionManager(sessionRepo)
         val sessionAppService = SessionAppService(sessionManager)

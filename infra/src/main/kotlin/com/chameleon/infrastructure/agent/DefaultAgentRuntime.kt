@@ -1,11 +1,11 @@
 package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentLoopPort
+import com.chameleon.agent.port.AgentLoopPort
 import com.chameleon.agent.AgentRunHandle
 import com.chameleon.agent.AgentRunRequest
 import com.chameleon.agent.AgentRunResult
-import com.chameleon.agent.AgentRuntime
+import com.chameleon.agent.port.AgentRuntimePort
 import com.chameleon.agent.AgentWaitRequest
 import com.chameleon.agent.Phase
 import com.chameleon.agent.RunId
@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap
 class DefaultAgentRuntime(
     private val config: PlatformConfig,
     private val loop: AgentLoopPort
-) : AgentRuntime {
+) : AgentRuntimePort {
     private val logger = LoggerFactory.getLogger(DefaultAgentRuntime::class.java)
     private val stacktrace = config.logging.stacktrace
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
