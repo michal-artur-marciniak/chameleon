@@ -16,4 +16,4 @@ VOLUME ["/app/workspace", "/app/config", "/app/extensions", "/app/data"]
 
 EXPOSE 18789
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener", "-jar", "app.jar"]
