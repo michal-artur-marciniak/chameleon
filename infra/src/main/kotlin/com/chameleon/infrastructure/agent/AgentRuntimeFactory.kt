@@ -1,5 +1,6 @@
-package com.chameleon.agent
+package com.chameleon.infrastructure.agent
 
+import com.chameleon.agent.AgentRuntime
 import com.chameleon.agent.port.DomainEventPublisherPort
 import com.chameleon.application.AgentRunService
 import com.chameleon.application.AgentTurnService
@@ -8,16 +9,16 @@ import com.chameleon.application.ToolExecutionService
 import com.chameleon.application.MemoryContextAssembler
 import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.llm.domain.ModelRefResolver
-import com.chameleon.llm.OpenAiCompatProvider
-import com.chameleon.llm.ProviderRegistry
 import com.chameleon.memory.domain.MemoryIndex
 import com.chameleon.memory.domain.MemorySearchService
-import com.chameleon.memory.SqliteMemoryIndexAdapter
-import com.chameleon.persistence.SessionFileRepository
-import com.chameleon.session.DefaultSessionManager
-import com.chameleon.tool.InMemoryToolDefinitionRegistry
-import com.chameleon.tool.ToolExecutorAdapter
-import com.chameleon.tool.ToolPolicyEvaluatorAdapter
+import com.chameleon.infrastructure.llm.OpenAiCompatProvider
+import com.chameleon.infrastructure.llm.ProviderRegistry
+import com.chameleon.infrastructure.memory.SqliteMemoryIndexAdapter
+import com.chameleon.infrastructure.persistence.SessionFileRepository
+import com.chameleon.infrastructure.session.DefaultSessionManager
+import com.chameleon.infrastructure.tool.InMemoryToolDefinitionRegistry
+import com.chameleon.infrastructure.tool.ToolExecutorAdapter
+import com.chameleon.infrastructure.tool.ToolPolicyEvaluatorAdapter
 import java.nio.file.Files
 import java.nio.file.Paths
 

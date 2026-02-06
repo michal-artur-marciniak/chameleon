@@ -1,6 +1,16 @@
-package com.chameleon.agent
+package com.chameleon.infrastructure.agent
 
-import com.chameleon.logging.LogWrapper
+import com.chameleon.agent.AgentEvent
+import com.chameleon.agent.AgentLoop
+import com.chameleon.agent.AgentRunHandle
+import com.chameleon.agent.AgentRunRequest
+import com.chameleon.agent.AgentRunResult
+import com.chameleon.agent.AgentRuntime
+import com.chameleon.agent.AgentWaitRequest
+import com.chameleon.agent.Phase
+import com.chameleon.agent.RunId
+import com.chameleon.agent.RunStatus
+import com.chameleon.infrastructure.logging.LogWrapper
 import com.chameleon.config.domain.PlatformConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

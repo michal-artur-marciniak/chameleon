@@ -1,4 +1,4 @@
-package com.chameleon.logging
+package com.chameleon.infrastructure.logging
 
 import com.chameleon.config.domain.LoggingConfig
 import org.slf4j.LoggerFactory

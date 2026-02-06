@@ -1,4 +1,4 @@
-package com.chameleon.llm
+package com.chameleon.infrastructure.llm
 
 import com.chameleon.llm.domain.ChatCompletionEvent
 import com.chameleon.llm.domain.ChatCompletionRequest

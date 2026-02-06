@@ -1,4 +1,4 @@
-package com.chameleon.tool
+package com.chameleon.infrastructure.tool
 
 import com.chameleon.tool.domain.ToolCallRequest
 import com.chameleon.tool.domain.ToolDomainEvent

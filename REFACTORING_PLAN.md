@@ -153,7 +153,7 @@ mkdir -p core/src/main/kotlin/com/chameleon/{agent,session,memory,tool,plugin,id
 mkdir -p core/src/main/kotlin/com/chameleon/application
 
 # Infrastructure
-mkdir -p infra/src/main/kotlin/com/chameleon/{persistence,llm,tool,agent,memory,channel,plugin,config}
+mkdir -p infra/src/main/kotlin/com/chameleon/infrastructure/{persistence,llm,tool,agent,memory,channel,plugin,config}
 
 # Bootstrap (formerly app)
 mkdir -p bootstrap/src/main/kotlin/com/chameleon
@@ -162,7 +162,7 @@ mkdir -p bootstrap/src/main/kotlin/com/chameleon
 mkdir -p sdk/src/main/kotlin/com/chameleon/sdk
 
 # Plugins
-- Move built-in plugins into `infra/src/main/kotlin/com/chameleon/plugin/`
+- Move built-in plugins into `infra/src/main/kotlin/com/chameleon/infrastructure/plugin/`
 ```
 
 2. **Copy all files to new locations**

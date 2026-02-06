@@ -1,4 +1,4 @@
-package com.chameleon.persistence
+package com.chameleon.infrastructure.persistence
 
 import com.chameleon.session.domain.SessionMetadata
 import kotlinx.serialization.Serializable

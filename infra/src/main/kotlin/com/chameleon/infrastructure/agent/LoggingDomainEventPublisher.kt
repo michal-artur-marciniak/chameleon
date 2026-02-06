@@ -1,4 +1,4 @@
-package com.chameleon.agent
+package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.domain.AgentLoopDomainEvent
 import com.chameleon.agent.port.DomainEventPublisherPort

@@ -1,4 +1,4 @@
-package com.chameleon.config
+package com.chameleon.infrastructure.config
 
 import com.chameleon.config.domain.LogFormat
 import com.chameleon.config.domain.LogLevel

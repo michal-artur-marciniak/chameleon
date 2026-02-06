@@ -1,4 +1,4 @@
-package com.chameleon.llm
+package com.chameleon.infrastructure.llm
 
 import com.chameleon.llm.port.LlmProviderPort
 import com.chameleon.llm.port.LlmProviderRepositoryPort

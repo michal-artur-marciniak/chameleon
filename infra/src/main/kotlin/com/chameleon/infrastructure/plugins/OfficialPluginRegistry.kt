@@ -1,4 +1,4 @@
-package com.chameleon.plugins
+package com.chameleon.infrastructure.plugins
 
 import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.plugin.domain.PluginCapability

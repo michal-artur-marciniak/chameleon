@@ -1,4 +1,4 @@
-package com.chameleon.config
+package com.chameleon.infrastructure.config
 
 import kotlinx.serialization.json.Json
 import com.chameleon.config.domain.LogFormat

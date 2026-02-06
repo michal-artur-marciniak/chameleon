@@ -1,4 +1,4 @@
-package com.chameleon.memory
+package com.chameleon.infrastructure.memory
 
 import com.chameleon.memory.domain.MemoryChunk
 import com.chameleon.memory.domain.MemoryIndexStatus

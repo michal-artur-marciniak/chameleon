@@ -1,11 +1,11 @@
-package com.chameleon.agent
+package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.AgentEvent
 import com.chameleon.agent.AgentLoop
 import com.chameleon.agent.AgentRunRequest
 import com.chameleon.application.AgentRunService
 import com.chameleon.config.domain.PlatformConfig
-import com.chameleon.logging.LogWrapper
+import com.chameleon.infrastructure.logging.LogWrapper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import org.slf4j.LoggerFactory

@@ -1,4 +1,4 @@
-package com.chameleon.config
+package com.chameleon.infrastructure.config
 
 import java.nio.file.Path
 

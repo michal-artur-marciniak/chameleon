@@ -1,8 +1,8 @@
 package com.chameleon.bootstrap
 
 import com.chameleon.bootstrap.StartupLogger
-import com.chameleon.config.ConfigLoader
-import com.chameleon.logging.LoggingConfigurator
+import com.chameleon.infrastructure.config.ConfigLoader
+import com.chameleon.infrastructure.logging.LoggingConfigurator
 
 /**
  * Main entry point for the Chameleon platform.

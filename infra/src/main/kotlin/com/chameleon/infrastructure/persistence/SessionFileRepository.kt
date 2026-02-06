@@ -1,9 +1,9 @@
-package com.chameleon.persistence
+package com.chameleon.infrastructure.persistence
 
-import com.chameleon.session.domain.SessionId
-import com.chameleon.session.domain.SessionKey
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.Session
+import com.chameleon.session.domain.SessionId
+import com.chameleon.session.domain.SessionKey
 import com.chameleon.session.port.SessionRepository
 import com.chameleon.session.port.SessionSummary
 import kotlinx.serialization.builtins.MapSerializer

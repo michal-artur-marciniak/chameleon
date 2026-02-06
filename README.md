@@ -93,7 +93,7 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `core/src/main/kotlin/com/chameleon/application/LlmRequestBuilder.kt` - LLM request ACL for prompt construction
 - `core/src/main/kotlin/com/chameleon/application/MemoryContextAssembler.kt` - Builds memory context for prompts
 
-**Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/agent/`):
+**Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/infrastructure/agent/`):
 - `DefaultAgentLoop.kt` - Adapter delegating to AgentRunService
 - `DefaultAgentRuntime.kt` - Runtime lifecycle management
 - `LoggingDomainEventPublisher.kt` - Default domain event logging
@@ -185,9 +185,9 @@ ToolsConfig(
 - `core/src/main/kotlin/com/chameleon/tool/domain/ToolPolicyService.kt` - Domain service
 - `core/src/main/kotlin/com/chameleon/tool/domain/ToolDomainEvents.kt` - Domain events
 - `core/src/main/kotlin/com/chameleon/tool/port/ToolRegistry.kt` - Ports (definition, policy, execution)
-- `infra/src/main/kotlin/com/chameleon/tool/InMemoryToolDefinitionRegistry.kt` - Definitions adapter
-- `infra/src/main/kotlin/com/chameleon/tool/ToolPolicyEvaluatorAdapter.kt` - Policy adapter
-- `infra/src/main/kotlin/com/chameleon/tool/ToolExecutorAdapter.kt` - Executor adapter
+- `infra/src/main/kotlin/com/chameleon/infrastructure/tool/InMemoryToolDefinitionRegistry.kt` - Definitions adapter
+- `infra/src/main/kotlin/com/chameleon/infrastructure/tool/ToolPolicyEvaluatorAdapter.kt` - Policy adapter
+- `infra/src/main/kotlin/com/chameleon/infrastructure/tool/ToolExecutorAdapter.kt` - Executor adapter
 
 ### Invariants
 
@@ -270,7 +270,7 @@ MemoryConfig(
 **Application Layer**:
 - `core/src/main/kotlin/com/chameleon/application/MemoryContextAssembler.kt` - Builds memory context for prompts
 
-**Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/memory/`):
+**Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/infrastructure/memory/`):
 - `SqliteMemoryIndexAdapter.kt` - SQLite FTS5 implementation
 
 ### Invariants
@@ -446,7 +446,7 @@ Located in `core/src/main/kotlin/com/chameleon/plugins/domain/` - DDD aggregate 
 Located in `infra/` - concrete channel implementations:
 
 **Official Plugins** (compiled with application):
-- **Telegram Plugin** (`infra/src/main/kotlin/com/chameleon/plugin/telegram/`)
+- **Telegram Plugin** (`infra/src/main/kotlin/com/chameleon/infrastructure/plugin/telegram/`)
   - Implements `ChannelPort` interface
   - Registered in `OfficialPluginRegistry` via `PluginFactory`
   - Uses Ktor HTTP client for Telegram Bot API

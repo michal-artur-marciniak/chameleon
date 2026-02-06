@@ -1,6 +1,6 @@
-package com.chameleon.session
+package com.chameleon.infrastructure.session
 
-import com.chameleon.persistence.SessionFileRepository
+import com.chameleon.infrastructure.persistence.SessionFileRepository
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.Session
 import com.chameleon.session.domain.SessionId

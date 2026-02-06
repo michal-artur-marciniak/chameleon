@@ -1,4 +1,4 @@
-package com.chameleon.logging
+package com.chameleon.infrastructure.logging
 
 import org.slf4j.Logger
 

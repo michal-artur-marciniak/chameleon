@@ -1,4 +1,4 @@
-package com.chameleon.plugins
+package com.chameleon.infrastructure.plugins
 
 import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.plugin.domain.PluginId
@@ -8,7 +8,7 @@ import com.chameleon.sdk.PluginManifest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import com.chameleon.logging.LogWrapper
+import com.chameleon.infrastructure.logging.LogWrapper
 import org.slf4j.LoggerFactory
 import java.net.URLClassLoader
 import java.nio.file.Files

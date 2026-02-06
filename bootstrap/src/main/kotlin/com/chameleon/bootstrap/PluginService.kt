@@ -2,8 +2,8 @@ package com.chameleon.bootstrap
 
 import com.chameleon.application.HandleInboundMessageUseCase
 import com.chameleon.config.domain.PlatformConfig
-import com.chameleon.logging.LogWrapper
-import com.chameleon.agent.AgentRuntimeFactory
+import com.chameleon.infrastructure.agent.AgentRuntimeFactory
+import com.chameleon.infrastructure.logging.LogWrapper
 import com.chameleon.plugin.domain.PluginEvent
 import com.chameleon.plugin.domain.PluginEventListener
 import com.chameleon.plugin.domain.PluginId
@@ -18,8 +18,8 @@ import com.chameleon.plugin.domain.PluginError
 import com.chameleon.plugin.domain.PluginSkipped
 import com.chameleon.sdk.ChannelPort
 import com.chameleon.sdk.InboundMessage
-import com.chameleon.plugins.FileSystemPluginRepository
-import com.chameleon.plugins.OfficialPluginRegistry
+import com.chameleon.infrastructure.plugins.FileSystemPluginRepository
+import com.chameleon.infrastructure.plugins.OfficialPluginRegistry
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
