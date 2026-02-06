@@ -1,11 +1,32 @@
-package com.chameleon.config
+package com.chameleon.bootstrap
 
+import com.chameleon.config.PlatformConfig
 import java.nio.file.Path
 import org.slf4j.LoggerFactory
 
+/**
+ * Logs startup configuration and diagnostic information.
+ *
+ * Outputs key configuration values at application startup to aid in
+ * debugging and operational visibility. Logs include:
+ * - Configuration file path
+ * - Environment file path
+ * - Gateway binding details
+ * - Default agent identifier
+ * - Telegram channel status
+ *
+ * @property logger SLF4J logger instance for this class
+ */
 class StartupLogger {
     private val logger = LoggerFactory.getLogger(StartupLogger::class.java)
 
+    /**
+     * Logs the platform configuration at startup.
+     *
+     * @param config The loaded platform configuration
+     * @param configPath Path to the configuration file, or null if using defaults
+     * @param envPath Path to the environment file
+     */
     fun log(config: PlatformConfig, configPath: Path?, envPath: Path) {
         val telegramEnabled = config.channels.telegram.enabled
         val tokenPresent = !config.channels.telegram.token.isNullOrBlank()
