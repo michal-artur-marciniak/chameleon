@@ -1,4 +1,4 @@
-# Application Layer
+# Agent Application Layer
 
 Orchestrates agent runtime operations between domain logic and channel adapters.
 
@@ -22,10 +22,6 @@ Coordinates the complete agent conversation lifecycle: receives inbound messages
 | `HandleInboundMessageUseCase.kt` | UC-001: Route inbound messages to agent runtime |
 | `AgentTurnService.kt` | Core agent loop: LLM calls, tool execution, event publishing |
 | `AgentRunService.kt` | Delegates to turn service |
-| `ToolExecutionService.kt` | Tool execution with policy validation |
-| `SessionAppService.kt` | Session compaction |
-| `LlmRequestBuilder.kt` | Build LLM requests from context + memory |
-| `MemoryContextAssembler.kt` | Retrieve memory context for injection |
 
 ## Domain Events
 

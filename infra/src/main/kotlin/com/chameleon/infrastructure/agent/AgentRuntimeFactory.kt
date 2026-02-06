@@ -2,11 +2,11 @@ package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.AgentRuntime
 import com.chameleon.agent.port.DomainEventPublisherPort
-import com.chameleon.application.AgentRunService
-import com.chameleon.application.AgentTurnService
-import com.chameleon.application.SessionAppService
-import com.chameleon.application.ToolExecutionService
-import com.chameleon.application.MemoryContextAssembler
+import com.chameleon.agent.application.AgentRunService
+import com.chameleon.agent.application.AgentTurnService
+import com.chameleon.memory.application.MemoryContextAssembler
+import com.chameleon.session.application.SessionAppService
+import com.chameleon.tool.application.ToolExecutionService
 import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.llm.domain.ModelRefResolver
 import com.chameleon.memory.domain.MemoryIndex

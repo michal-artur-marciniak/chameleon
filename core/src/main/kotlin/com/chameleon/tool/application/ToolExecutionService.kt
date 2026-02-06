@@ -1,4 +1,4 @@
-package com.chameleon.application
+package com.chameleon.tool.application
 
 import com.chameleon.tool.domain.ToolCallRequest
 import com.chameleon.tool.domain.ToolPolicyService

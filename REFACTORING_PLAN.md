@@ -9,11 +9,11 @@ This document outlines the complete 3-phase refactoring to align the codebase wi
 ## Phase 1: Application Layer Consolidation
 
 ### Goal
-Move application services to `core/src/main/kotlin/com/chameleon/application/` and keep use cases in core.
+Move application services into their bounded contexts under `core/src/main/kotlin/com/chameleon/<context>/application/`.
 
 ### Current State
-- Application services in `core/src/main/kotlin/com/chameleon/application/`
-- Use cases in `core/src/main/kotlin/com/chameleon/application/`
+- Application services in `core/src/main/kotlin/com/chameleon/<context>/application/`
+- Use cases in `core/src/main/kotlin/com/chameleon/<context>/application/`
 
 ### Target State
 - `core/` module contains ALL application layer code
@@ -24,7 +24,7 @@ Move application services to `core/src/main/kotlin/com/chameleon/application/` a
 
 1. **Ensure core application package structure:**
 ```
-core/src/main/kotlin/com/chameleon/application/
+core/src/main/kotlin/com/chameleon/<context>/application/
 ├── AgentTurnService.kt
 ├── AgentRunService.kt
 ├── SessionAppService.kt
@@ -38,7 +38,7 @@ core/src/main/kotlin/com/chameleon/application/
 - Ensure `core` includes application dependencies used by orchestration (ktor client, slf4j, logback, coroutines).
 
 3. **Move files:**
-- Ensure all application services live in `core/src/main/kotlin/com/chameleon/application/`
+- Ensure all application services live in `core/src/main/kotlin/com/chameleon/<context>/application/`
    - Remove application module once build succeeds
 
 4. **Update settings.gradle.kts:**
@@ -150,7 +150,7 @@ Rename root package from `agent.platform` to `com.chameleon` and flatten hierarc
 mkdir -p core/src/main/kotlin/com/chameleon/{agent,session,memory,tool,plugin,identity,llm,channel,config}
 
 # Application layer
-mkdir -p core/src/main/kotlin/com/chameleon/application
+mkdir -p core/src/main/kotlin/com/chameleon/{agent,session,tool,llm,memory}/application
 
 # Infrastructure
 mkdir -p infra/src/main/kotlin/com/chameleon/infrastructure/{persistence,llm,tool,agent,memory,channel,plugin,config}

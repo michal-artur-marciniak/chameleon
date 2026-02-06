@@ -85,13 +85,18 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `AgentLoopDomainEvents.kt` - Domain events (AgentLoopStarted, ToolExecuted, etc.)
 - `core/src/main/kotlin/com/chameleon/agent/port/DomainEventPublisherPort.kt` - Port for publishing domain events
 
-**Application Layer** (`core/src/main/kotlin/com/chameleon/application/`):
+**Application Layer** (`core/src/main/kotlin/com/chameleon/agent/application/`):
 - `AgentRunService.kt` - Orchestrates run flow
 - `AgentTurnService.kt` - Orchestrates turns, persistence, and tool execution
+- `HandleInboundMessageUseCase.kt` - UC-001 for inbound channel messages
+**Session Application** (`core/src/main/kotlin/com/chameleon/session/application/`):
 - `SessionAppService.kt` - Compaction orchestration
+**Tool Application** (`core/src/main/kotlin/com/chameleon/tool/application/`):
 - `ToolExecutionService.kt` - Policy + execution facade
-- `core/src/main/kotlin/com/chameleon/application/LlmRequestBuilder.kt` - LLM request ACL for prompt construction
-- `core/src/main/kotlin/com/chameleon/application/MemoryContextAssembler.kt` - Builds memory context for prompts
+**LLM Application** (`core/src/main/kotlin/com/chameleon/llm/application/`):
+- `LlmRequestBuilder.kt` - LLM request ACL for prompt construction
+**Memory Application** (`core/src/main/kotlin/com/chameleon/memory/application/`):
+- `MemoryContextAssembler.kt` - Builds memory context for prompts
 
 **Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/infrastructure/agent/`):
 - `DefaultAgentLoop.kt` - Adapter delegating to AgentRunService
@@ -268,7 +273,7 @@ MemoryConfig(
 - `core/src/main/kotlin/com/chameleon/memory/port/MemoryIndexRepositoryPort.kt` - Repository port interface
 
 **Application Layer**:
-- `core/src/main/kotlin/com/chameleon/application/MemoryContextAssembler.kt` - Builds memory context for prompts
+- `core/src/main/kotlin/com/chameleon/memory/application/MemoryContextAssembler.kt` - Builds memory context for prompts
 
 **Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/infrastructure/memory/`):
 - `SqliteMemoryIndexAdapter.kt` - SQLite FTS5 implementation
@@ -288,7 +293,7 @@ Memory search is composed in the application layer. The domain aggregate stays p
 
 The application layer implements use cases that orchestrate domain objects:
 
-Located in `core/src/main/kotlin/com/chameleon/application/`:
+Located in `core/src/main/kotlin/com/chameleon/agent/application/`:
 
 - **`HandleInboundMessageUseCase`** (UC-001) - Routes channel messages through DDD agent runtime
   - Maps `InboundMessage` to `SessionKey`

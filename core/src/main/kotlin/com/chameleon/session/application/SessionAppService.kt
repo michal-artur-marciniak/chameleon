@@ -1,4 +1,4 @@
-package com.chameleon.application
+package com.chameleon.session.application
 
 import com.chameleon.session.domain.Session
 import com.chameleon.session.port.CompactionResult

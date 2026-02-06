@@ -1,4 +1,4 @@
-package com.chameleon.application
+package com.chameleon.memory.application
 
 import com.chameleon.memory.domain.MemoryIndex
 import com.chameleon.memory.domain.MemorySearchService

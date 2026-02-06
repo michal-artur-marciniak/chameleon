@@ -1,4 +1,4 @@
-package com.chameleon.application
+package com.chameleon.llm.application
 
 import com.chameleon.agent.ContextBundle
 import com.chameleon.llm.domain.ChatCompletionRequest

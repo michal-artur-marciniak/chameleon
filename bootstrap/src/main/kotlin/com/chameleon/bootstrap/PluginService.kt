@@ -1,6 +1,6 @@
 package com.chameleon.bootstrap
 
-import com.chameleon.application.HandleInboundMessageUseCase
+import com.chameleon.agent.application.HandleInboundMessageUseCase
 import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.infrastructure.agent.AgentRuntimeFactory
 import com.chameleon.infrastructure.logging.LogWrapper

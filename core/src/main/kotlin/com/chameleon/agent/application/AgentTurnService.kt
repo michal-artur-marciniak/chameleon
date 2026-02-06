@@ -1,4 +1,4 @@
-package com.chameleon.application
+package com.chameleon.agent.application
 
 import com.chameleon.agent.AgentEvent
 import com.chameleon.agent.AgentLoop
@@ -12,18 +12,22 @@ import com.chameleon.agent.domain.AgentLoopDomainEvent
 import com.chameleon.agent.port.DomainEventPublisherPort
 import com.chameleon.agent.domain.TurnEvent
 import com.chameleon.config.domain.PlatformConfig
+import com.chameleon.llm.application.LlmRequestBuilder
 import com.chameleon.llm.domain.ModelRef
 import com.chameleon.llm.domain.ModelRefResolutionError
 import com.chameleon.llm.domain.ModelRefResolver
 import com.chameleon.llm.port.LlmProviderPort
 import com.chameleon.llm.port.LlmProviderRepositoryPort
+import com.chameleon.memory.application.MemoryContextAssembler
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.MessageRole
 import com.chameleon.session.domain.Session
+import com.chameleon.session.application.SessionAppService
 import com.chameleon.session.port.SessionManager
 import com.chameleon.session.port.SessionRepository
 import com.chameleon.tool.domain.ToolCallRequest
 import com.chameleon.tool.domain.ToolResult
+import com.chameleon.tool.application.ToolExecutionService
 import com.chameleon.tool.port.ToolDefinitionRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

@@ -1,4 +1,4 @@
-package com.chameleon.application
+package com.chameleon.agent.application
 
 import com.chameleon.agent.AgentEvent
 import com.chameleon.agent.AgentLoop
