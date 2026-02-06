@@ -1,6 +1,6 @@
 package com.chameleon.agent.domain
 
-import com.chameleon.agent.RunId
+import com.chameleon.agent.domain.RunId
 import com.chameleon.llm.domain.ChatCompletionEvent
 import com.chameleon.tool.domain.ToolCallRequest
 import com.chameleon.tool.port.ToolDefinitionRegistry

@@ -1,12 +1,10 @@
-package com.chameleon.agent
+package com.chameleon.agent.application
 
+import com.chameleon.agent.domain.RunId
 import com.chameleon.session.domain.SessionKey
 import com.chameleon.sdk.InboundMessage
 import java.time.Instant
 import java.time.Duration
-
-@JvmInline
-value class RunId(val value: String)
 
 data class AgentRunRequest(
     val runId: RunId = RunId("pending"),

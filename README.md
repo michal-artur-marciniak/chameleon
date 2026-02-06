@@ -108,9 +108,14 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `AgentLoopPort.kt` - Loop port
 **Application Contracts** (`core/src/main/kotlin/com/chameleon/agent/application/`):
 - `ContextAssembler.kt` - Builds context bundles for turns
-**Models & Events** (`core/src/main/kotlin/com/chameleon/agent/`):
+**Application Models & Events** (`core/src/main/kotlin/com/chameleon/agent/application/`):
 - `AgentEvents.kt` - Event types (AssistantDelta, ToolEvent, etc.)
-- `AgentModels.kt` - RunRequest, RunHandle, RunResult
+- `AgentRunModels.kt` - RunRequest, RunHandle, RunResult
+**Domain Models** (`core/src/main/kotlin/com/chameleon/agent/domain/`):
+- `RunId.kt` - Run identifier value object
+- `AgentsConfig.kt` - Agent config and defaults
+- `AgentModelConfig.kt` - Agent model selection
+- `ThinkingLevel.kt` - Thinking/verbosity enums
 
 ### Domain Invariants (Enforced by AgentLoop Aggregate)
 

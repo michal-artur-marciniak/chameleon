@@ -1,4 +1,4 @@
-package com.chameleon.agent
+package com.chameleon.agent.application
 
 import com.chameleon.session.domain.Message
 

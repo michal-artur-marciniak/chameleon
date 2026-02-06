@@ -1,4 +1,4 @@
-package com.chameleon.agent
+package com.chameleon.agent.domain
 
 import com.chameleon.session.domain.CompactionConfig
 import kotlinx.serialization.Serializable

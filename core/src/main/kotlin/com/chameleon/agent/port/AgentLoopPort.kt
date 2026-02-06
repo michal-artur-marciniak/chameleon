@@ -1,7 +1,7 @@
 package com.chameleon.agent.port
 
-import com.chameleon.agent.AgentEvent
-import com.chameleon.agent.AgentRunRequest
+import com.chameleon.agent.application.AgentEvent
+import com.chameleon.agent.application.AgentRunRequest
 import kotlinx.coroutines.flow.Flow
 
 interface AgentLoopPort {

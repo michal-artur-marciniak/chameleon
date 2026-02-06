@@ -1,9 +1,9 @@
 package com.chameleon.agent.port
 
-import com.chameleon.agent.AgentRunHandle
-import com.chameleon.agent.AgentRunRequest
-import com.chameleon.agent.AgentRunResult
-import com.chameleon.agent.AgentWaitRequest
+import com.chameleon.agent.application.AgentRunHandle
+import com.chameleon.agent.application.AgentRunRequest
+import com.chameleon.agent.application.AgentRunResult
+import com.chameleon.agent.application.AgentWaitRequest
 
 interface AgentRuntimePort {
     fun start(request: AgentRunRequest): AgentRunHandle

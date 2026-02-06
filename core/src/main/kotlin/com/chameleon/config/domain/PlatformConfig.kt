@@ -1,6 +1,6 @@
 package com.chameleon.config.domain
 
-import com.chameleon.agent.AgentsConfig
+import com.chameleon.agent.domain.AgentsConfig
 import com.chameleon.channel.domain.ChannelsConfig
 import com.chameleon.channel.domain.GatewayConfig
 import com.chameleon.llm.domain.ModelsConfig

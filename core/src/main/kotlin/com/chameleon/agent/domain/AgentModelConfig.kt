@@ -1,4 +1,4 @@
-package com.chameleon.agent
+package com.chameleon.agent.domain
 
 import kotlinx.serialization.Serializable
 

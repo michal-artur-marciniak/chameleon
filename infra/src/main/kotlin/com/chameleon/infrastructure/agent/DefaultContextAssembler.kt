@@ -1,9 +1,9 @@
 package com.chameleon.infrastructure.agent
 
 import com.chameleon.agent.application.ContextAssembler
-import com.chameleon.agent.ContextBundle
-import com.chameleon.agent.InjectedFileReport
-import com.chameleon.agent.SystemPromptReport
+import com.chameleon.agent.application.ContextBundle
+import com.chameleon.agent.application.InjectedFileReport
+import com.chameleon.agent.application.SystemPromptReport
 import com.chameleon.config.domain.PlatformConfig
 import com.chameleon.session.domain.Message
 import com.chameleon.session.domain.MessageRole

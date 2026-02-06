@@ -1,6 +1,6 @@
 package com.chameleon.llm.application
 
-import com.chameleon.agent.ContextBundle
+import com.chameleon.agent.application.ContextBundle
 import com.chameleon.llm.domain.ChatCompletionRequest
 import com.chameleon.llm.domain.ChatMessage
 import com.chameleon.session.domain.MessageRole

@@ -1,6 +1,6 @@
 package com.chameleon.agent.domain
 
-import com.chameleon.agent.RunId
+import com.chameleon.agent.domain.RunId
 import com.chameleon.session.domain.SessionId
 import com.chameleon.session.domain.SessionKey
 import java.time.Instant

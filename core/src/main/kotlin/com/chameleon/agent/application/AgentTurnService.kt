@@ -1,11 +1,7 @@
 package com.chameleon.agent.application
 
-import com.chameleon.agent.AgentEvent
 import com.chameleon.agent.port.AgentLoopPort
-import com.chameleon.agent.AgentRunRequest
-import com.chameleon.agent.RunId
-import com.chameleon.agent.ContextBundle
-import com.chameleon.agent.ToolPhase
+import com.chameleon.agent.domain.RunId
 import com.chameleon.agent.domain.AgentLoop
 import com.chameleon.agent.domain.AgentLoopDomainEvent
 import com.chameleon.agent.port.DomainEventPublisherPort

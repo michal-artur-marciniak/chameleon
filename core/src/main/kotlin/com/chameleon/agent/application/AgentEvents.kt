@@ -1,4 +1,6 @@
-package com.chameleon.agent
+package com.chameleon.agent.application
+
+import com.chameleon.agent.domain.RunId
 
 sealed interface AgentEvent {
     data class Lifecycle(
