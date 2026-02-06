@@ -357,14 +357,41 @@ Environment variables are expanded with `${VAR_NAME}` syntax. Missing variables 
             "reasoning": true
           }
         ]
+      },
+      "minimax": {
+        "baseUrl": "https://api.minimax.io/v1",
+        "apiKey": "${MINIMAX_API_KEY}",
+        "models": [
+          {
+            "id": "MiniMax-M2.1",
+            "name": "MiniMax M2.1",
+            "contextWindow": 204800,
+            "maxTokens": 8192,
+            "reasoning": true
+          },
+          {
+            "id": "MiniMax-M2.1-lightning",
+            "name": "MiniMax M2.1 Lightning",
+            "contextWindow": 204800,
+            "maxTokens": 8192,
+            "reasoning": true
+          },
+          {
+            "id": "MiniMax-M2",
+            "name": "MiniMax M2",
+            "contextWindow": 204800,
+            "maxTokens": 8192,
+            "reasoning": true
+          }
+        ]
       }
     }
   },
   "agents": {
     "defaults": {
       "model": { "primary": "kimi/kimi-k2.5" },
-      "workspace": "/bootstrap/workspace",
-      "extensionsDir": "/bootstrap/extensions",
+      "workspace": "workspace",
+      "extensionsDir": "extensions",
       "contextTokens": 128000,
       "timeoutSeconds": 600,
       "thinkingDefault": "off",
@@ -597,7 +624,7 @@ The `PluginManager` will auto-discover and load on startup. Official plugins tak
 ```bash
 # Setup environment
 cp .env.example .env
-# Edit .env with your TELEGRAM_TOKEN
+# Edit .env with your TELEGRAM_TOKEN and MINIMAX_API_KEY
 
 # Run application (uses default config from resources)
 ./gradlew :bootstrap:run

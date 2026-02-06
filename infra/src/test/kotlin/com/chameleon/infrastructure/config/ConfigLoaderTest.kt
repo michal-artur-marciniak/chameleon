@@ -11,7 +11,7 @@ import kotlin.test.assertNotNull
 
 class ConfigLoaderTest {
     @Test
-    fun failsWhenEnvMissing() {
+    fun defaultsWhenEnvMissing() {
         val configPath = createTempConfig(
             """
             {
@@ -45,9 +45,9 @@ class ConfigLoaderTest {
             """.trimIndent()
         )
         val loader = ConfigLoader()
-        assertFailsWith<IllegalStateException> {
-            loader.load(ConfigPath.Explicit(configPath), emptyMap(), emptyList())
-        }
+        val loaded = loader.load(ConfigPath.Explicit(configPath), emptyMap(), emptyList())
+        assertNotNull(loaded.config.models.providers["kimi"])
+        assertEquals("", loaded.config.models.providers["kimi"]?.apiKey)
     }
 
     @Test

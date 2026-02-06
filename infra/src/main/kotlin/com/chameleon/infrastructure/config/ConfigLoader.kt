@@ -81,11 +81,7 @@ class ConfigLoader(
         val regex = Regex("""\$\{([A-Z0-9_]+)}""")
         return regex.replace(raw) { match ->
             val key = match.groupValues[1]
-            val value = env[key] ?: System.getenv(key)
-            if (value.isNullOrBlank()) {
-                throw IllegalStateException("Missing required env var: $key")
-            }
-            value
+            env[key] ?: System.getenv(key).orEmpty()
         }
     }
 

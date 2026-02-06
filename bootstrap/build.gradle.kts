@@ -17,6 +17,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.12")
     implementation("ch.qos.logback:logback-classic:${property("logbackVersion")}")
     implementation("net.logstash.logback:logstash-logback-encoder:${property("logstashLogbackEncoderVersion")}")
+    implementation("org.codehaus.janino:janino:3.1.12")
 
     implementation("io.insert-koin:koin-core:3.5.6")
     implementation("io.insert-koin:koin-ktor:3.5.6")
@@ -28,7 +29,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.chameleon.ApplicationKt")
+    mainClass.set("com.chameleon.bootstrap.ApplicationKt")
 }
 
 tasks.register<Jar>("fatJar") {
@@ -37,7 +38,7 @@ tasks.register<Jar>("fatJar") {
     archiveClassifier.set("")
     archiveVersion.set("")
     manifest {
-        attributes["Main-Class"] = "com.chameleon.ApplicationKt"
+        attributes["Main-Class"] = "com.chameleon.bootstrap.ApplicationKt"
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(sourceSets.main.get().output)
@@ -47,4 +48,8 @@ tasks.register<Jar>("fatJar") {
             .filter { it.name.endsWith(".jar") }
             .map { zipTree(it) }
     })
+    exclude("META-INF/*.SF")
+    exclude("META-INF/*.DSA")
+    exclude("META-INF/*.RSA")
+    exclude("META-INF/INDEX.LIST")
 }

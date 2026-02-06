@@ -13,16 +13,43 @@
             "reasoning": true
           }
         ]
+      },
+      "minimax": {
+        "baseUrl": "https://api.minimax.io/v1",
+        "apiKey": "${MINIMAX_API_KEY}",
+        "models": [
+          {
+            "id": "MiniMax-M2.1",
+            "name": "MiniMax M2.1",
+            "contextWindow": 204800,
+            "maxTokens": 8192,
+            "reasoning": true
+          },
+          {
+            "id": "MiniMax-M2.1-lightning",
+            "name": "MiniMax M2.1 Lightning",
+            "contextWindow": 204800,
+            "maxTokens": 8192,
+            "reasoning": true
+          },
+          {
+            "id": "MiniMax-M2",
+            "name": "MiniMax M2",
+            "contextWindow": 204800,
+            "maxTokens": 8192,
+            "reasoning": true
+          }
+        ]
       }
     }
   },
   "agents": {
     "defaults": {
       "model": {
-        "primary": "kimi/kimi-k2.5"
+        "primary": "minimax/MiniMax-M2.1"
       },
-      "workspace": "/app/workspace",
-      "extensionsDir": "/app/extensions",
+      "workspace": "workspace",
+      "extensionsDir": "extensions",
       "contextTokens": 128000,
       "timeoutSeconds": 600,
       "thinkingDefault": "off",
@@ -77,7 +104,7 @@
   "channels": {
     "entries": {
       "telegram": {
-        "enabled": false,
+        "enabled": true,
         "token": "${TELEGRAM_TOKEN}",
         "mode": "polling",
         "requireMention": true,

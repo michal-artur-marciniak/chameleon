@@ -1,10 +1,16 @@
-FROM eclipse-temurin:21-jre-alpine
-
-RUN apk add --no-cache sqlite sqlite-dev
+FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /app
 
-COPY app/build/libs/chameleon.jar app.jar
+COPY . .
+
+RUN ./gradlew :bootstrap:fatJar --no-daemon
+
+FROM eclipse-temurin:21-jre-jammy
+
+WORKDIR /app
+
+COPY --from=build /app/bootstrap/build/libs/chameleon.jar app.jar
 
 VOLUME ["/app/workspace", "/app/config", "/app/extensions", "/app/data"]
 
