@@ -4,7 +4,7 @@ Bootstrap scaffold for the OpenClaw-inspired Chameleon platform.
 
 ## Modules
 
-- `app` - application entrypoint, server
+- `bootstrap` - application entrypoint, server
 - `core` - domain layer (pure Kotlin)
 - `infra` - infrastructure adapters (config loader, persistence, memory index)
 - `sdk` - plugin SDK interfaces
@@ -34,9 +34,9 @@ Sessions manage conversation history and enforce compaction rules as a domain ag
 4. Summaries accumulate in the `summaries` list
 
 **Key Files**
-- `core/src/main/kotlin/agent/platform/session/Session.kt` - Domain aggregate
-- `core/src/main/kotlin/agent/platform/session/SessionDomainEvents.kt` - Domain events
-- `core/src/main/kotlin/agent/platform/session/CompactionConfig.kt` - Threshold configuration
+- `core/src/main/kotlin/com/chameleon/session/domain/Session.kt` - Domain aggregate
+- `core/src/main/kotlin/com/chameleon/session/domain/SessionDomainEvents.kt` - Domain events
+- `core/src/main/kotlin/com/chameleon/session/domain/CompactionConfig.kt` - Threshold configuration
 
 ## Agent Loop (DDD Core Domain)
 
@@ -46,7 +46,7 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer (app)                  │
+│                 Bootstrap + Application Layers              │
 │  HandleInboundMessageUseCase (UC-001)                       │
 │  └── Maps InboundMessage → SessionKey                       │
 │  └── Starts AgentRuntime                                    │
@@ -81,12 +81,12 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 
 ### Key Files
 
-**Domain Layer** (`core/src/main/kotlin/agent/platform/agent/domain/`):
+**Domain Layer** (`core/src/main/kotlin/com/chameleon/agent/domain/`):
 - `AgentLoop.kt` - Core aggregate with `processCompletion()`
 - `AgentLoopDomainEvents.kt` - Domain events (AgentLoopStarted, ToolExecuted, etc.)
-- `core/src/main/kotlin/agent/platform/agent/ports/DomainEventPublisherPort.kt` - Port for publishing domain events
+- `core/src/main/kotlin/com/chameleon/agent/port/DomainEventPublisherPort.kt` - Port for publishing domain events
 
-**Application Layer (core)** (`core/src/main/kotlin/agent/platform/application/`):
+**Application Layer** (`application/src/main/kotlin/com/chameleon/application/`):
 - `AgentRunService.kt` - Orchestrates run flow
 - `AgentTurnService.kt` - Orchestrates turns, persistence, and tool execution
 - `SessionAppService.kt` - Compaction orchestration
@@ -94,12 +94,12 @@ Inbound channel messages run through a layered agent pipeline that keeps domain 
 - `application/llm/LlmRequestBuilder.kt` - LLM request ACL for prompt construction
 - `application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
 
-**Infrastructure Layer** (`infra/src/main/kotlin/agent/platform/agent/`):
+**Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/agent/`):
 - `DefaultAgentLoop.kt` - Adapter delegating to AgentRunService
 - `DefaultAgentRuntime.kt` - Runtime lifecycle management
 - `LoggingDomainEventPublisher.kt` - Default domain event logging
 
-**Contracts** (`core/src/main/kotlin/agent/platform/agent/`):
+**Contracts** (`core/src/main/kotlin/com/chameleon/agent/`):
 - `AgentContracts.kt` - Runtime and loop interfaces
 - `AgentEvents.kt` - Event types (AssistantDelta, ToolEvent, etc.)
 - `AgentModels.kt` - RunRequest, RunHandle, RunResult
@@ -183,12 +183,12 @@ ToolsConfig(
 
 ### Key Files
 
-- `core/src/main/kotlin/agent/platform/tool/ToolPolicyService.kt` - Domain service
-- `core/src/main/kotlin/agent/platform/tool/ToolDomainEvents.kt` - Domain events
-- `core/src/main/kotlin/agent/platform/tool/ToolRegistry.kt` - Ports (definition, policy, execution)
-- `infra/src/main/kotlin/agent/platform/tool/InMemoryToolDefinitionRegistry.kt` - Definitions adapter
-- `infra/src/main/kotlin/agent/platform/tool/ToolPolicyEvaluatorAdapter.kt` - Policy adapter
-- `infra/src/main/kotlin/agent/platform/tool/ToolExecutorAdapter.kt` - Executor adapter
+- `core/src/main/kotlin/com/chameleon/tool/domain/ToolPolicyService.kt` - Domain service
+- `core/src/main/kotlin/com/chameleon/tool/domain/ToolDomainEvents.kt` - Domain events
+- `core/src/main/kotlin/com/chameleon/tool/port/ToolRegistry.kt` - Ports (definition, policy, execution)
+- `infra/src/main/kotlin/com/chameleon/tool/InMemoryToolDefinitionRegistry.kt` - Definitions adapter
+- `infra/src/main/kotlin/com/chameleon/tool/ToolPolicyEvaluatorAdapter.kt` - Policy adapter
+- `infra/src/main/kotlin/com/chameleon/tool/ToolExecutorAdapter.kt` - Executor adapter
 
 ### Invariants
 
@@ -261,17 +261,17 @@ MemoryConfig(
 
 ### Key Files
 
-**Domain Layer** (`core/src/main/kotlin/agent/platform/memory/`):
+**Domain Layer** (`core/src/main/kotlin/com/chameleon/memory/`):
 - `MemoryIndex.kt` - Core aggregate with indexing logic
 - `MemoryChunk.kt` - Value objects (chunks, search results, queries)
 - `MemorySearchService.kt` - Domain service for search operations
 - `MemoryDomainEvents.kt` - Domain events
-- `core/src/main/kotlin/agent/platform/memory/ports/MemoryIndexRepositoryPort.kt` - Repository port interface
+- `core/src/main/kotlin/com/chameleon/memory/port/MemoryIndexRepositoryPort.kt` - Repository port interface
 
-**Application Layer (core)**:
-- `core/src/main/kotlin/agent/platform/application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
+**Application Layer**:
+- `application/src/main/kotlin/com/chameleon/application/memory/MemoryContextAssembler.kt` - Builds memory context for prompts
 
-**Infrastructure Layer** (`infra/src/main/kotlin/agent/platform/memory/`):
+**Infrastructure Layer** (`infra/src/main/kotlin/com/chameleon/memory/`):
 - `SqliteMemoryIndexAdapter.kt` - SQLite FTS5 implementation
 
 ### Invariants
@@ -289,14 +289,14 @@ Memory search is composed in the application layer. The domain aggregate stays p
 
 The application layer implements use cases that orchestrate domain objects:
 
-Located in `app/src/main/kotlin/agent/platform/application/`:
+Located in `application/src/main/kotlin/com/chameleon/application/`:
 
 - **`HandleInboundMessageUseCase`** (UC-001) - Routes channel messages through DDD agent runtime
   - Maps `InboundMessage` to `SessionKey`
   - Starts agent runs via `AgentRuntime`
   - Streams lifecycle events (START, END, ERROR)
 
-**Domain Events** (in `core/src/main/kotlin/agent/platform/agent/domain/`):
+**Domain Events** (in `core/src/main/kotlin/com/chameleon/agent/domain/`):
 - `AgentLoopStarted` - Run initiated
 - `ToolCallInitiated` - Tool execution started
 - `ToolExecuted` - Tool execution completed
@@ -322,7 +322,7 @@ Channel adapters remain thin - all orchestration lives in the application layer.
 
 Configuration loads from:
 1. `config/config.json`
-2. `app/src/main/resources/config.default.json`
+2. `bootstrap/src/main/resources/config.default.json`
 
 Environment variables are expanded with `${VAR_NAME}` syntax. Missing variables cause startup to fail.
 
@@ -350,8 +350,8 @@ Environment variables are expanded with `${VAR_NAME}` syntax. Missing variables 
   "agents": {
     "defaults": {
       "model": { "primary": "kimi/kimi-k2.5" },
-      "workspace": "/app/workspace",
-      "extensionsDir": "/app/extensions",
+      "workspace": "/bootstrap/workspace",
+      "extensionsDir": "/bootstrap/extensions",
       "contextTokens": 128000,
       "timeoutSeconds": 600,
       "thinkingDefault": "off",
@@ -420,7 +420,7 @@ Located in `sdk/` module - defines interfaces and data structures all plugins mu
   - `OutboundMessage` - channelId, chatId, text
 
 #### 2. Domain Layer (Plugin Context)
-Located in `core/src/main/kotlin/agent/platform/plugins/domain/` - DDD aggregate root and value objects:
+Located in `core/src/main/kotlin/com/chameleon/plugins/domain/` - DDD aggregate root and value objects:
 
 - **`PluginManager`** - Aggregate root for plugin lifecycle
   - `loadAll()` - Discovers and loads all plugins (official + external)
@@ -459,8 +459,8 @@ Located in `plugins/` directory - concrete channel implementations:
 - Constructor injection: `(PluginManifest)`, `(PlatformConfig)`, `(JsonObject)`, or no-args
 - Official plugins take precedence (external skipped if ID conflicts)
 
-#### 4. Application Layer (Orchestration)
-Located in `app/` - uses domain layer:
+#### 4. Bootstrap Layer (Orchestration)
+Located in `bootstrap/` - uses domain layer:
 
 - **`PluginService`** - Application service
   - Creates `PluginManager` aggregate root
@@ -585,7 +585,7 @@ cp .env.example .env
 # Edit .env with your TELEGRAM_TOKEN
 
 # Run application (uses default config from resources)
-./gradlew :app:run
+./gradlew :bootstrap:run
 
 # Test health endpoint
 curl http://localhost:18789/health
@@ -598,14 +598,14 @@ websocat ws://localhost:18789/ws
 
 ```bash
 # Build fat JAR
-./gradlew :app:fatJar
+./gradlew :bootstrap:fatJar
 
 # Create directories for runtime data
 mkdir -p workspace extensions data
 
 # Copy and customize config (optional - defaults work out of the box)
 mkdir -p config
-cp app/src/main/resources/config.default.json config/config.json
+cp bootstrap/src/main/resources/config.default.json config/config.json
 # Edit config/config.json to customize
 
 # Start with Docker Compose
@@ -617,7 +617,7 @@ docker compose up -d
 Configuration is loaded in order of priority:
 1. `--config=/path/to/config.json` (CLI override)
 2. `config/config.json` (if exists in working directory)
-3. `app/src/main/resources/config.default.json` (bundled fallback)
+3. `bootstrap/src/main/resources/config.default.json` (bundled fallback)
 
 Environment variables are expanded using `${VAR_NAME}` syntax in config files. Missing variables cause startup to fail.
 
